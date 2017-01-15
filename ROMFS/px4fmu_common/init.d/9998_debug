@@ -1,0 +1,74 @@
+#!nsh
+#
+# @name Debug
+#
+# @type Tait custom
+#
+# @maintainer Suzanna Paulos <spaulos@taittowers.com>
+#
+
+#start required apps:
+sh /etc/init.d/rc.mc_defaults
+pozyx start
+
+if [ $AUTOCNF == yes ]
+then
+	#each vehicle needs unique sysID
+	param set MAV_SYS_ID 1
+
+fi
+
+param set PWM_DISARMED 0
+param set PWM_MIN 1060
+param set PWM_MAX 1860
+param set PWM_RATE 400
+
+param set COM_RC_IN_MODE 1
+
+param set ATT_EXT_HDG_M 2
+param set INAV_DISAB_MOCAP 0
+
+param set SYS_MC_EST_GROUP 0
+
+#EKF2 setup
+if [ $SYS_MC_EST_GROUP == 2 ]
+then
+	param set EKF2_AID_MASK 24
+	param set EKF2_USE_MOCAP 1
+
+	#position of Pixhawk in frame
+	param set EKF2_IMU_POS_X 0
+	param set EKF2_IMU_POS_Y 0
+	param set EKF2_IMU_POS_Z 0
+
+	#position of Pozyx in frame
+	param set EKF2_EV_POS_X 0
+	param set EKF2_EV_POS_Y 0
+	param set EKF2_EV_POS_Z 0
+fi
+
+param set COM_RC_IN_MODE 2
+#set the offboard control switch to an unused channel, and give it a thresholed so it's always on
+param set RC_MAP_OFFB_SW 18
+param set RC_OFFB_TH -1
+param set RC_MAP_KILL_SW 17
+param set RC_KILLSWITCH_TH -1
+
+#disable need for safety switch -- NAV should send this parameter with ES status
+param set CBRK_IO_SAFETY 22027
+
+# This is the gimbal pass mixer
+set MIXER_AUX pass
+set PWM_AUX_RATE 50
+set PWM_AUX_OUT 1234
+set PWM_AUX_DISARMED 1500
+set PWM_AUX_MIN 1000
+set PWM_AUX_MAX 2000
+
+#set mixer
+set MIXER IO_Pass
+
+
+#this needs to happen later -- called where extras.txt would be called in rcS
+#non-standard MAVLink messages
+#mavlink stream -r 5 -s ATT_POS_MOCAP -d /dev/ttyS1
