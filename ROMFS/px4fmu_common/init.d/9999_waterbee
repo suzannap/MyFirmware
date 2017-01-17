@@ -9,6 +9,8 @@
 
 #start required apps:
 sh /etc/init.d/rc.mc_defaults
+
+#set VEHICLE_TYPE 11
 pozyx start
 
 if [ $AUTOCNF == yes ]
@@ -59,6 +61,8 @@ param set RC_KILLSWITCH_TH 0.5
 param set CBRK_IO_SAFETY 22027
 param set CBRK_USB_CHK 197848
 
+param set COM_ARM_IMU_ACC 2
+
 # This is the gimbal pass mixer
 set MIXER_AUX pass
 set PWM_AUX_RATE 50
@@ -79,6 +83,12 @@ param set RC_MAP_AUX1 6
 #param set CAL_MAG1_ID 131874
 #param set CAL_MAG2_ID 262144
 #param set CAL_MAG_PRIME 262144
+
+#battery settings
+param set BAT_N_CELLS 4
+param set BAT_V_CHARGED 3.50
+param set BAT_V_EMPTY 3.00
+
 
 
 #set mixer

@@ -37,4 +37,4 @@ mc_pos_control start
 #
 # Start Land Detector
 #
-land_detector start multicopter
+#land_detector start multicopter

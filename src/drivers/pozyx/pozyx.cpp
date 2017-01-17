@@ -229,11 +229,12 @@ namespace pozyx
 		struct att_pos_mocap_s pos;
 		unsigned startid = 0;
 		int validcount = 0;
+		int totalerror = 0;
 
 
 		pos.x = 0;
 		pos.y = 0;
-		pos.z = -1000;
+		pos.z = -5;
 
 		for (int i=0; i<count; i++){
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
@@ -248,7 +249,8 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					if(poz_error.y > 1000 || poz_error.y < 10) {
+					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+					if(totalerror > 800 || totalerror < 10) {
 						//position covariance is too big, not a good reading
 						poz_coordinates[i].x = 0;
 						poz_coordinates[i].y = 0;
@@ -263,7 +265,8 @@ namespace pozyx
 			//pos.z += poz_coordinates[i].z;
 
 
-			if (count == 1) {
+			//if (count == 1) {
+			if (i == 0) {
 				quaternion_t poz_orientation;
 				if (POZYX_SUCCESS == bus.dev->getQuaternion(&poz_orientation)){
 					if (print_result) {
@@ -280,13 +283,14 @@ namespace pozyx
 		}
 
 
-		if (validcount > 1) {
-			double yaw = - atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[1].x - poz_coordinates[0].x));
+		//if (validcount > 1) {
+		if (false) {
+			double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[1].x - poz_coordinates[0].x));
 
 			if (print_result) {
 				PX4_INFO("Current yaw: %f deg.", (yaw * 180 / 3.14159));
 			}
-			pozyx_orient(2) = yaw;
+			matrix::Vector3f pozyx_orient(0, 0, yaw);
 			matrix::Quatf myq(1.0, 0, 0, 0);
 			myq.from_axis_angle(pozyx_orient);
 			pos.q[0] = myq(0);
@@ -323,12 +327,23 @@ namespace pozyx
 
 			uint8_t num_anchors =4;
 
+			
+			//R&D
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x6857, 1, {0, 0, 1902}},
 				{0x6827, 1, {-3106, 0, 1963}},
 				{0x684E, 1, {877, -6337, 1828}},
 				{0x6853, 1, {-3789, -6745, 1635}}
 			};
+			/*
+			//Building 9
+			device_coordinates_t anchorlist[num_anchors] = {
+				{0x683b, 1, {3846 -213, 2068}},
+				{0x685b, 1, {30330, -15438, 2180}},
+				{0x6826, 1, {-122, -9874, 1841}},
+				{0x6854, 1, {11381, -949, 8242}}
+			};
+			*/
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
 				for (int j = 0; j < num_anchors; j++) {
