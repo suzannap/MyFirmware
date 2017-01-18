@@ -748,6 +748,7 @@ MavlinkReceiver::handle_message_att_pos_mocap(mavlink_message_t *msg)
 void
 MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t *msg)
 {
+	PX4_INFO("setpoint received");
 	mavlink_set_position_target_local_ned_t set_position_target_local_ned;
 	mavlink_msg_set_position_target_local_ned_decode(msg, &set_position_target_local_ned);
 
