@@ -278,6 +278,12 @@ namespace pozyx
 					pos.q[1] = poz_orientation.weight;
 					pos.q[2] = poz_orientation.z;
 					pos.q[3] = -poz_orientation.y;		
+					//change orientation from funny vertical to NED rotate -90 degrees about z and +90 about y
+					//[q0, q1, q2, q3] >>> [q1, -q2, -q0, -q3]
+					pos.q[0] = poz_orientation.x;
+					pos.q[1] = -poz_orientation.y;
+					pos.q[2] = -poz_orientation.weight;
+					pos.q[3] = poz_orientation.z;	
 				}			
 			}
 		}
@@ -339,7 +345,7 @@ namespace pozyx
 			//Building 9
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x683b, 1, {3846 -213, 2068}},
-				{0x685b, 1, {30330, -15438, 2180}},
+				{0x685b, 1, {5664, -21178, 2180}},
 				{0x6826, 1, {-122, -9874, 1841}},
 				{0x6854, 1, {11381, -949, 8242}}
 			};
