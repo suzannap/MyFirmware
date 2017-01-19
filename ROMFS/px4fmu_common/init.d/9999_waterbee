@@ -21,8 +21,8 @@ fi
 param set MAV_BROADCAST 1
 
 param set PWM_DISARMED 0
-param set PWM_MIN 1260
-param set PWM_MAX 1660
+param set PWM_MIN 1064
+param set PWM_MAX 1864
 param set PWM_RATE 400
 param set COM_RC_IN_MODE 1
 
@@ -55,7 +55,7 @@ param set COM_RC_IN_MODE 1
 param set RC_MAP_OFFB_SW 8
 param set RC_OFFB_TH 0.5
 param set RC_MAP_KILL_SW 7
-param set RC_KILLSWITCH_TH 0.5
+param set RC_KILLSWITCH_TH -0.5
 
 #disable need for safety switch -- NAV should send this parameter with ES status
 param set CBRK_IO_SAFETY 22027
@@ -93,5 +93,4 @@ param set BAT_V_EMPTY 3.00
 
 #set mixer
 set MIXER waterbee
-#set MIXER IO_Pass
 
