@@ -265,8 +265,8 @@ namespace pozyx
 			//pos.z += poz_coordinates[i].z;
 
 
-			//if (count == 1) {
-			if (i == 0) {
+			if (count == 1) {
+			//if (i == 0) {
 				quaternion_t poz_orientation;
 				if (POZYX_SUCCESS == bus.dev->getQuaternion(&poz_orientation)){
 					if (print_result) {
@@ -281,6 +281,7 @@ namespace pozyx
 					pos.q[3] = -poz_orientation.y;	
 					*/	
 					//change orientation from funny vertical to NED rotate -90 degrees about z and +90 about y
+					//needs to be + and +...
 					//[q0, q1, q2, q3] >>> [q1, -q2, -q0, -q3]
 					pos.q[0] = poz_orientation.x;
 					pos.q[1] = -poz_orientation.y;
@@ -291,8 +292,8 @@ namespace pozyx
 		}
 
 
-		//if (validcount > 1) {
-		if (false) {
+		if (validcount > 1) {
+		//if (false) {
 			double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[1].x - poz_coordinates[0].x));
 
 			if (print_result) {
@@ -335,7 +336,7 @@ namespace pozyx
 
 			uint8_t num_anchors =4;
 
-			
+			/*
 			//R&D
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x6857, 1, {0, 0, 1902}},
@@ -343,7 +344,7 @@ namespace pozyx
 				{0x684E, 1, {877, -6337, 1828}},
 				{0x6853, 1, {-3789, -6745, 1635}}
 			};
-			/*
+			*/
 			//Building 9
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x683b, 1, {3846 -213, 2068}},
@@ -351,7 +352,7 @@ namespace pozyx
 				{0x6826, 1, {-122, -9874, 1841}},
 				{0x6854, 1, {11381, -949, 8242}}
 			};
-			*/
+			
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
 				for (int j = 0; j < num_anchors; j++) {
