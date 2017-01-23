@@ -240,7 +240,8 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
+			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
+			if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 				}
@@ -335,6 +336,8 @@ namespace pozyx
 			startid = bus.index + 1;
 
 			uint8_t num_anchors =6;
+			uint8_t z_value = -300;
+			uint8_t min_anchors = 132; //4 && auto selection bit
 
 			/*
 			//R&D
@@ -370,6 +373,23 @@ namespace pozyx
 				if (bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS) == POZYX_SUCCESS) {
 					PX4_INFO("%d anchors saved", num_anchors);
 				}
+			}
+
+			usleep(100000);
+			if (bus.dev->setPositionAlgorithm(POZYX_POS_ALG_UWB_ONLY, POZYX_2_5D) == POZYX_SUCCESS) {
+				PX4_INFO("2.5D UWB Algorithm set");
+			}
+			usleep(100000);
+			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
+				PX4_INFO("Auto anchor selection set. Minimum 4 anchors used.", z_value);
+			}
+			usleep(100000);
+			if (bus.dev->regWrite(POZYX_POS_Z, &z_value, 4) == POZYX_SUCCESS) {
+				PX4_INFO("Z position fixed to %dmm", z_value);
+			}
+			usleep(100000);
+			if (bus.dev->setUpdateInterval(200) == POZYX_SUCCESS) {
+				PX4_INFO("200ms continuous positioning interval set");
 			}
 		}
 	}
@@ -695,7 +715,7 @@ pozyx_pub_main(int argc, char *argv[])
 
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 1, false);
-		usleep(300000);
+		usleep(200000);
 	}
 
 	warnx("[pozyx_pub] exiting.\n");
@@ -711,7 +731,7 @@ pozyx_pub_main_2(int argc, char *argv[])
 
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 2, false);
-		usleep(600000);
+		usleep(200000);
 	}
 
 	warnx("[pozyx_pub] exiting.\n");
