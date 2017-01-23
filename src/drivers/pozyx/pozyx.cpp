@@ -250,7 +250,7 @@ namespace pozyx
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
 					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
-					if(totalerror > 800 || totalerror < 10) {
+					if(totalerror > 700 || totalerror < 10) {
 						//position covariance is too big, not a good reading
 						poz_coordinates[i].x = 0;
 						poz_coordinates[i].y = 0;
@@ -294,7 +294,7 @@ namespace pozyx
 
 		if (validcount > 1) {
 		//if (false) {
-			double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[1].x - poz_coordinates[0].x));
+			double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
 
 			if (print_result) {
 				PX4_INFO("Current yaw: %f deg.", (yaw * 180 / 3.14159));
@@ -334,7 +334,7 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			uint8_t num_anchors =4;
+			uint8_t num_anchors =6;
 
 			/*
 			//R&D
@@ -347,10 +347,12 @@ namespace pozyx
 			*/
 			//Building 9
 			device_coordinates_t anchorlist[num_anchors] = {
-				{0x683b, 1, {3846 -213, 2068}},
-				{0x685b, 1, {5664, -21178, 2180}},
-				{0x6826, 1, {-122, -9874, 1841}},
-				{0x6854, 1, {11381, -949, 8242}}
+				{0x683b, 1, {4779, -345, 124}},
+				{0x684e, 1, {10122, -336, -653}},
+				{0x685b, 1, {5694, -21167, 22}},
+				{0x6826, 1, {-304, -13515, -104}},
+				{0x6854, 1, {15514, -1379, 6313}},
+				{0x6857, 1, {-304, -7250, -145}}
 			};
 			
 
@@ -446,7 +448,7 @@ namespace pozyx
 		mysettings.bitrate = bitrates[bitrate];
 		mysettings.prf = prfs[prf];
 		mysettings.plen = plens[plen];
-		mysettings.gain_db = gain_db;
+		mysettings.gain_db = 0; //gain_db;
 
 		uint8_t device_list_size;
 
