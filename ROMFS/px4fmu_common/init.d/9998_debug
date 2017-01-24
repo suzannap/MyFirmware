@@ -9,20 +9,21 @@
 
 #start required apps:
 sh /etc/init.d/rc.mc_defaults
+
+#set VEHICLE_TYPE 11
 pozyx start
 
 if [ $AUTOCNF == yes ]
 then
 	#each vehicle needs unique sysID
-	param set MAV_SYS_ID 1
-
+	param set MAV_SYS_ID 10
 fi
+param set MAV_BROADCAST 1
 
 param set PWM_DISARMED 0
-param set PWM_MIN 1060
-param set PWM_MAX 1860
+param set PWM_MIN 1064
+param set PWM_MAX 1864
 param set PWM_RATE 400
-
 param set COM_RC_IN_MODE 1
 
 param set ATT_EXT_HDG_M 2
@@ -47,28 +48,48 @@ then
 	param set EKF2_EV_POS_Z 0
 fi
 
-param set COM_RC_IN_MODE 2
+param set SYS_COMPANION 57600
+
+param set COM_RC_IN_MODE 1
 #set the offboard control switch to an unused channel, and give it a thresholed so it's always on
-param set RC_MAP_OFFB_SW 18
-param set RC_OFFB_TH -1
-param set RC_MAP_KILL_SW 17
-param set RC_KILLSWITCH_TH -1
+param set RC_MAP_OFFB_SW 8
+param set RC_OFFB_TH 0.5
+param set RC_MAP_KILL_SW 7
+param set RC_KILLSWITCH_TH -0.5
 
 #disable need for safety switch -- NAV should send this parameter with ES status
 param set CBRK_IO_SAFETY 22027
+param set CBRK_USB_CHK 197848
+
+param set COM_ARM_IMU_ACC 2
 
 # This is the gimbal pass mixer
 set MIXER_AUX pass
 set PWM_AUX_RATE 50
 set PWM_AUX_OUT 1234
-set PWM_AUX_DISARMED 1500
-set PWM_AUX_MIN 1000
-set PWM_AUX_MAX 2000
+param set PWM_AUX_DISARMED 0
+param set PWM_AUX_MIN 1000
+param set PWM_AUX_MAX 2000
+param set RC_MAP_AUX1 6
+
+#skip calibration
+#param set CAL_ACC0_ID 1441792
+#param set CAL_ACC1_ID 1114914
+#param set param CAL_ACC_PRIME 1441792
+#param set CAL_GYRO0_ID 2359296
+#param set CAL_GYRO1_ID 2229282
+#param set CAL_GYRO_PRIME 2359296
+#param set CAL_MAG0_ID 262144
+#param set CAL_MAG1_ID 131874
+#param set CAL_MAG2_ID 262144
+#param set CAL_MAG_PRIME 262144
+
+#battery settings
+param set BAT_N_CELLS 4
+param set BAT_V_CHARGED 3.50
+param set BAT_V_EMPTY 3.00
+
 
 #set mixer
 set MIXER IO_Pass
 
-
-#this needs to happen later -- called where extras.txt would be called in rcS
-#non-standard MAVLink messages
-#mavlink stream -r 5 -s ATT_POS_MOCAP -d /dev/ttyS1

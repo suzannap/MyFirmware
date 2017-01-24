@@ -241,7 +241,9 @@ namespace pozyx
 			startid = bus.index + 1;
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
-			if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
+			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -300)){
+
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 				}
@@ -250,11 +252,14 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
-					if(totalerror > 700 || totalerror < 10) {
+					//totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + 10*abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+					totalerror = abs(poz_error.xy);
+					if(totalerror > 500 || totalerror < 10) {
 						//position covariance is too big, not a good reading
 						poz_coordinates[i].x = 0;
 						poz_coordinates[i].y = 0;
+
+						PX4_INFO("Total error tag %d: %d", bus.index, totalerror);
 					}
 					else {
 						validcount += 1;
@@ -336,8 +341,6 @@ namespace pozyx
 			startid = bus.index + 1;
 
 			uint8_t num_anchors =6;
-			uint8_t z_value = -300;
-			uint8_t min_anchors = 132; //4 && auto selection bit
 
 			/*
 			//R&D
@@ -375,22 +378,41 @@ namespace pozyx
 				}
 			}
 
+			/*
 			usleep(100000);
 			if (bus.dev->setPositionAlgorithm(POZYX_POS_ALG_UWB_ONLY, POZYX_2_5D) == POZYX_SUCCESS) {
-				PX4_INFO("2.5D UWB Algorithm set");
+				uint8_t algorithm = 0;
+				if (bus.dev->getPositionAlgorithm(&algorithm) == POZYX_SUCCESS){
+					PX4_INFO("Algorithm set to: %x", algorithm);
+				}
+				if (bus.dev->getPositionDimension(&algorithm) == POZYX_SUCCESS){
+					PX4_INFO("Dimension set to: %x", algorithm);
+				}
 			}
+			*/
 			usleep(100000);
+			uint8_t min_anchors = 132; //4 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
-				PX4_INFO("Auto anchor selection set. Minimum 4 anchors used.", z_value);
+				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
+					PX4_INFO("Auto anchor selection set. Minimum %d anchors used.", min_anchors);
+				}		
+			}
+			/*
+			usleep(100000);
+			int32_t z_value = -300;
+			if (bus.dev->regWrite(POZYX_POS_Z, (uint8_t *) &z_value, 4) == POZYX_SUCCESS) {
+				if (bus.dev->regRead(POZYX_POS_Z, (uint8_t *) &z_value, 4) == POZYX_SUCCESS) {
+					PX4_INFO("Z position fixed to %dmm", z_value);
+				}
 			}
 			usleep(100000);
-			if (bus.dev->regWrite(POZYX_POS_Z, &z_value, 4) == POZYX_SUCCESS) {
-				PX4_INFO("Z position fixed to %dmm", z_value);
+			if (bus.dev->setUpdateInterval(400) == POZYX_SUCCESS) {				
+				uint16_t interval = 0;
+				if (bus.dev->getUpdateInterval(&interval) == POZYX_SUCCESS) {
+					PX4_INFO("%dms continuous positioning interval set", interval);
+				}
 			}
-			usleep(100000);
-			if (bus.dev->setUpdateInterval(200) == POZYX_SUCCESS) {
-				PX4_INFO("200ms continuous positioning interval set");
-			}
+			*/
 		}
 	}
 
@@ -715,7 +737,7 @@ pozyx_pub_main(int argc, char *argv[])
 
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 1, false);
-		usleep(200000);
+		usleep(300000);
 	}
 
 	warnx("[pozyx_pub] exiting.\n");
@@ -731,7 +753,7 @@ pozyx_pub_main_2(int argc, char *argv[])
 
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 2, false);
-		usleep(200000);
+		usleep(600000);
 	}
 
 	warnx("[pozyx_pub] exiting.\n");

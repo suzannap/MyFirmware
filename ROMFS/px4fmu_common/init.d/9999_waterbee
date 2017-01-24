@@ -51,11 +51,17 @@ fi
 param set SYS_COMPANION 57600
 
 param set COM_RC_IN_MODE 1
-#set the offboard control switch to an unused channel, and give it a thresholed so it's always on
-param set RC_MAP_OFFB_SW 8
-param set RC_OFFB_TH 0.5
+
+param set RC_MAP_FLTMODE 8
+param set COM_FLTMODE1 7
+param set COM_FLTMODE2 7
+param set COM_FLTMODE3 2
+param set COM_FLTMODE4 2
+param set COM_FLTMODE5 0
+param set COM_FLTMODE6 0
+
 param set RC_MAP_KILL_SW 7
-param set RC_KILLSWITCH_TH -0.5
+param set RC_KILLSWITCH_TH -0.9
 
 #disable need for safety switch -- NAV should send this parameter with ES status
 param set CBRK_IO_SAFETY 22027
