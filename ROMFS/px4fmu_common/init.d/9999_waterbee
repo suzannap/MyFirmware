@@ -92,8 +92,8 @@ param set RC_MAP_AUX1 6
 
 #battery settings
 param set BAT_N_CELLS 4
-param set BAT_V_CHARGED 3.50
-param set BAT_V_EMPTY 3.00
+param set BAT_V_CHARGED 3.5
+param set BAT_V_EMPTY 2.65
 
 
 

@@ -91,5 +91,5 @@ param set BAT_V_EMPTY 3.00
 
 
 #set mixer
-set MIXER IO_Pass
+set MIXER waterbee_debug
 
