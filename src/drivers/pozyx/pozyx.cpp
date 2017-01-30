@@ -278,20 +278,12 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Current orientation: %1.4f  %1.4f  %1.4f  %1.4f", (double)poz_orientation.weight, (double)poz_orientation.x, (double)poz_orientation.y, (double)poz_orientation.z);
 					}
-					/*
-					//change orientation from NWU to NED rotate 180 degrees about x
-					//[q0, q1, q2, q3] * [0, 1, 0, 0] = [-q1, q0, q3, -q2]
-					pos.q[0] = -poz_orientation.x;
-					pos.q[1] = poz_orientation.weight;
-					pos.q[2] = poz_orientation.z;
-					pos.q[3] = -poz_orientation.y;	
-					*/	
-					//change orientation from funny vertical to NED rotate -90 degrees about z and +90 about y
+					//change orientation from funny vertical to NED rotate 180 degrees about z and -90 about x
 					//needs to be + and +...
-					//[q0, q1, q2, q3] >>> [q1, -q2, -q0, -q3]
-					pos.q[0] = poz_orientation.x;
+					//[q0, q1, q2, q3] >>> [-q0, -q2, -q1, q3]
+					pos.q[0] = -poz_orientation.weight;
 					pos.q[1] = -poz_orientation.y;
-					pos.q[2] = -poz_orientation.weight;
+					pos.q[2] = -poz_orientation.x;
 					pos.q[3] = poz_orientation.z;	
 				}			
 			}
