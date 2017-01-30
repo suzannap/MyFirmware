@@ -2700,14 +2700,15 @@ int commander_thread_main(int argc, char *argv[])
 			/* no else case: do not change lockdown flag in unconfigured case */
 
 		} else {
+			
+			//leave outputs killed if no RC signal
+			armed.lockdown = true;
 			if (!status_flags.rc_input_blocked && !status.rc_signal_lost) {
 				mavlink_log_critical(&mavlink_log_pub, "MANUAL CONTROL LOST (at t=%llums)", hrt_absolute_time() / 1000);
 				status.rc_signal_lost = true;
 				rc_signal_lost_timestamp = sp_man.timestamp;
 				status_changed = true;
 			}
-			//leave outputs killed if no RC signal
-			armed.lockdown = true;
 		}
 
 		/* data links check */

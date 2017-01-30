@@ -242,7 +242,7 @@ namespace pozyx
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
 			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -300)){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
 
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
@@ -270,16 +270,13 @@ namespace pozyx
 			pos.y += poz_coordinates[i].y;
 			//pos.z += poz_coordinates[i].z;
 
-
 			if (count == 1) {
-			//if (i == 0) {
 				quaternion_t poz_orientation;
 				if (POZYX_SUCCESS == bus.dev->getQuaternion(&poz_orientation)){
 					if (print_result) {
 						PX4_INFO("Current orientation: %1.4f  %1.4f  %1.4f  %1.4f", (double)poz_orientation.weight, (double)poz_orientation.x, (double)poz_orientation.y, (double)poz_orientation.z);
 					}
 					//change orientation from funny vertical to NED rotate 180 degrees about z and -90 about x
-					//needs to be + and +...
 					//[q0, q1, q2, q3] >>> [-q0, -q2, -q1, q3]
 					pos.q[0] = -poz_orientation.weight;
 					pos.q[1] = -poz_orientation.y;
