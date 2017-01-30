@@ -1,0 +1,39 @@
+Water Bee mixer for PX4FMU
+===========================
+
+This file defines mixers suitable for controlling a Water Bee boat using
+PX4FMU. The configuration assumes the 4 ESCs are connected to PX4FMU
+servo outputs 1-4 and the fountain to aux 1. 
+
+
+M: 2
+O:      10000  10000      0 -10000  10000
+S: 0 0  -10000  -10000      0 -10000  10000
+S: 0 2  -10000  -10000      0 -10000  10000
+
+M: 2
+O:      10000  10000      0 -10000  10000
+S: 0 1  10000  10000      0 -10000  10000
+S: 0 2  -10000  -10000      0 -10000  10000
+
+M: 2
+O:      10000  10000      0 -10000  10000
+S: 0 0  -10000  -10000      0 -10000  10000
+S: 0 2  10000  10000      0 -10000  10000
+
+M: 2
+O:      10000  10000      0 -10000  10000
+S: 0 1  10000  10000      0 -10000  10000
+S: 0 2  10000  10000      0 -10000  10000
+
+Z:
+Z:
+Z:
+Z:
+
+
+# AUX1 channel (select RC channel with RC_MAP_AUX1 param)
+M: 1
+O:      0  10000      0 0  10000
+S: 3 5  0  10000      0 0  10000
+
