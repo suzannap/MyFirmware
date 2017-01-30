@@ -2706,6 +2706,8 @@ int commander_thread_main(int argc, char *argv[])
 				rc_signal_lost_timestamp = sp_man.timestamp;
 				status_changed = true;
 			}
+			//leave outputs killed if no RC signal
+			armed.lockdown = true;
 		}
 
 		/* data links check */
