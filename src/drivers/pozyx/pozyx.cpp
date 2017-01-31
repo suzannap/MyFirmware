@@ -252,14 +252,29 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					//totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + 10*abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
 					totalerror = abs(poz_error.xy);
-					if(totalerror > 500 || totalerror < 10) {
-						//position covariance is too big, not a good reading
-						poz_coordinates[i].x = 0;
-						poz_coordinates[i].y = 0;
-
-						PX4_INFO("Total error tag %d: %d", bus.index, totalerror);
+					if(totalerror > 400 || totalerror < 10) {
+						// not a good reading, try again
+						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
+							if (print_result) {
+								PX4_INFO("2nd measure current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
+							}
+							if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
+								if (print_result) {
+									PX4_INFO("2nd measure Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
+								}
+								totalerror = abs(poz_error.xy);
+								if(totalerror > 400 || totalerror < 10) {
+									//2nd reading also bad
+									poz_coordinates[i].x = 0;
+									poz_coordinates[i].y = 0;
+									PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);
+								}
+								else {
+									validcount += 1;
+								}
+							}
+						}
 					}
 					else {
 						validcount += 1;
@@ -717,7 +732,7 @@ pozyx_pub_main(int argc, char *argv[])
 
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 1, false);
-		usleep(300000);
+		usleep(1000000);
 	}
 
 	warnx("[pozyx_pub] exiting.\n");
@@ -733,7 +748,7 @@ pozyx_pub_main_2(int argc, char *argv[])
 
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 2, false);
-		usleep(600000);
+		usleep(1000000);
 	}
 
 	warnx("[pozyx_pub] exiting.\n");
