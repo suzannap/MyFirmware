@@ -817,6 +817,14 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 
 	_att_control = _params.rate_p.emult(rates_err * tpa) + _params.rate_d.emult(_rates_prev - rates) / dt + _rates_int +
 		       _params.rate_ff.emult(_rates_sp);
+	
+	//WaterBee: overwrite roll/pitch commands with straight passthrough from pos controller
+	if (_params.att_p(0) < 0.001f) {
+		_att_control(0) = _params.rate_p(0) * _v_att_sp.roll_body;
+	}
+	if (_params.att_p(1) < 0.001f) {
+		_att_control(1) = _params.rate_p(1) * _v_att_sp.pitch_body;
+	}
 
 	_rates_sp_prev = _rates_sp;
 	_rates_prev = rates;
@@ -836,6 +844,8 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 			}
 		}
 	}
+
+
 }
 
 void
