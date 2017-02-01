@@ -990,10 +990,13 @@ MulticopterPositionControl::control_offboard(float dt)
 			_pos_sp(0) = _pos_sp_triplet.current.x;
 			_pos_sp(1) = _pos_sp_triplet.current.y;
 
-		} else if (_control_mode.flag_control_velocity_enabled && _pos_sp_triplet.current.velocity_valid) {
+		} 
+		if (_control_mode.flag_control_velocity_enabled && _pos_sp_triplet.current.velocity_valid) {
 			/* control velocity */
 			/* reset position setpoint to current position if needed */
-			reset_pos_sp();
+			if (!(_control_mode.flag_control_position_enabled && _pos_sp_triplet.current.position_valid)) {
+				reset_pos_sp();
+			}
 
 			/* set position setpoint move rate */
 			_vel_sp(0) = _pos_sp_triplet.current.vx;
@@ -1537,8 +1540,8 @@ MulticopterPositionControl::task_main()
 			} else {
 				/* run position & altitude controllers, if enabled (otherwise use already computed velocity setpoints) */
 				if (_run_pos_control) {
-					_vel_sp(0) = (_pos_sp(0) - _pos(0)) * _params.pos_p(0);
-					_vel_sp(1) = (_pos_sp(1) - _pos(1)) * _params.pos_p(1);
+					_vel_sp(0) += (_pos_sp(0) - _pos(0)) * _params.pos_p(0);
+					_vel_sp(1) += (_pos_sp(1) - _pos(1)) * _params.pos_p(1);
 				}
 
 				// guard against any bad velocity values
