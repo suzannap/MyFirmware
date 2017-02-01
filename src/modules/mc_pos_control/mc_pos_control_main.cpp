@@ -986,6 +986,9 @@ MulticopterPositionControl::control_offboard(float dt)
 
 	if (_pos_sp_triplet.current.valid) {
 		if (_control_mode.flag_control_position_enabled && _pos_sp_triplet.current.position_valid) {
+			//reset velocity setpoints
+			_vel_sp(0) = 0;
+			_vel_sp(1) = 0;			
 			/* control position */
 			_pos_sp(0) = _pos_sp_triplet.current.x;
 			_pos_sp(1) = _pos_sp_triplet.current.y;
