@@ -15,6 +15,10 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/att_pos_mocap.h>
 #include <uORB/topics/vehicle_attitude.h>
+
+#include <uORB/topics/vehicle_command.h>
+#include <uORB/topics/vehicle_command_ack.h>
+
 #include "pozyx.h"
 
 //needed to run daemon
@@ -49,6 +53,7 @@ enum POZYX_BUS {
 
 int pozyx_pub_main(int argc, char *argv[]);
 int pozyx_pub_main_2(int argc, char *argv[]);
+int pozyx_commands(int argc, char *argv[]);
 extern "C" __EXPORT int pozyx_main(int argc, char *argv[]);
 
 /****************namespace**********************************************/
@@ -576,6 +581,8 @@ namespace pozyx
 int
 pozyx_main(int argc, char *argv[])
 {
+
+
 	//int ch;
 	enum POZYX_BUS busid = POZYX_BUS_ALL;
 	int testnum = 0;
@@ -594,6 +601,7 @@ pozyx_main(int argc, char *argv[])
 			}
 
 			thread_should_exit = false;
+			/*
 			if (count == 1) {
 				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
 												SCHED_DEFAULT, 
@@ -610,6 +618,13 @@ pozyx_main(int argc, char *argv[])
 												pozyx_pub_main_2,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 			}
+			*/
+				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
+												SCHED_DEFAULT, 
+												SCHED_PRIORITY_DEFAULT, 
+												2000, 
+												pozyx_pub_main_2,
+												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 
 		}
 		exit(0);
@@ -749,6 +764,77 @@ pozyx_pub_main_2(int argc, char *argv[])
 	while (!thread_should_exit) {
 		pozyx::getposition(POZYX_BUS_ALL, 2, false);
 		usleep(1000000);
+	}
+
+	warnx("[pozyx_pub] exiting.\n");
+	thread_running = false;	
+	return 0;
+}
+
+int 
+pozyx_commands(int argc, char *argv[])
+{
+	warnx("[pozyx_pub] starting\n");
+	thread_running = true;
+
+	//mostly taken from commander.cpp
+	/* Subscribe to command topic */
+	int cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
+	struct vehicle_command_s cmd;
+	memset(&cmd, 0, sizeof(cmd));
+
+	/* command ack 
+	orb_advert_t command_ack_pub = nullptr;
+	struct vehicle_command_ack_s command_ack;
+	memset(&command_ack, 0, sizeof(command_ack));
+	*/
+
+	/* wakeup source(s) */
+	px4_pollfd_struct_t fds[1];
+	
+
+	/* pace output  */
+	fds[0].fd = cmd_sub;
+	fds[0].events = POLLIN;
+
+	while (!thread_should_exit) {
+		/* wait for up to 1000ms for data */
+		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 1000);
+
+		/* timed out - periodic check for thread_should_exit, etc. */
+		if (pret == 0) {
+			/* trigger a param autosave if required 
+			if (need_param_autosave) {
+				if (need_param_autosave_timeout > 0 && hrt_elapsed_time(&need_param_autosave_timeout) > 200000ULL) {
+					int ret = param_save_default();
+
+					if (ret != OK) {
+						mavlink_log_critical(&mavlink_log_pub, "settings auto save error");
+					} else {
+						PX4_DEBUG("commander: settings saved.");
+					}
+
+					need_param_autosave = false;
+					need_param_autosave_timeout = 0;
+				} else {
+					need_param_autosave_timeout = hrt_absolute_time();
+				}
+			}
+			*/
+		} else if (pret < 0) {
+		/* this is undesirable but not much we can do - might want to flag unhappy status */
+			warn("commander: poll error %d, %d", pret, errno);
+			continue;
+		} else {
+
+			/* if we reach here, we have a valid command */
+			orb_copy(ORB_ID(vehicle_command), cmd_sub, &cmd);
+
+			/* handle relevant commands */
+			if (cmd.command == 31010) {
+				pozyx::getposition(POZYX_BUS_ALL, 2, false);
+			}
+		}
 	}
 
 	warnx("[pozyx_pub] exiting.\n");
