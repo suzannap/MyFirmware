@@ -258,7 +258,7 @@ namespace pozyx
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
 					totalerror = abs(poz_error.xy);
-					if(totalerror > 400 || totalerror < 10) {
+					if(totalerror > 300 || totalerror < 10) {
 						// not a good reading, try again
 						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
 							if (print_result) {
@@ -269,7 +269,7 @@ namespace pozyx
 									PX4_INFO("2nd measure Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 								}
 								totalerror = abs(poz_error.xy);
-								if(totalerror > 400 || totalerror < 10) {
+								if(totalerror > 300 || totalerror < 10) {
 									//2nd reading also bad
 									poz_coordinates[i].x = 0;
 									poz_coordinates[i].y = 0;
@@ -321,6 +321,12 @@ namespace pozyx
 			pos.q[1] = myq(1);
 			pos.q[2] = myq(2);
 			pos.q[3] = myq(3);
+
+			float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].z),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
+			if ((sensor_distance > 1150) || (sensor_distance < 850)){
+				//sensor measurements are not consistent
+				validcount = 0;
+			}
 		}	
 
 		pos.timestamp = hrt_absolute_time();
@@ -623,7 +629,7 @@ pozyx_main(int argc, char *argv[])
 												SCHED_DEFAULT, 
 												SCHED_PRIORITY_DEFAULT, 
 												2000, 
-												pozyx_pub_main_2,
+												pozyx_commands,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 
 		}
