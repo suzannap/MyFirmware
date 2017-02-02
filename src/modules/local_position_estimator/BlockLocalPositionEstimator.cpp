@@ -20,6 +20,11 @@ static const bool integrate = true; // use accel for integrating
 static const float P_MAX = 1.0e6f; // max allowed value in state covariance
 static const float LAND_RATE = 10.0f; // rate of land detector correction
 
+
+static const float r_x = 0.3; //distance of IMU from vehicle center (x direction)
+float yawspeed_last = 0;
+
+
 BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	// this block has no parent, and has name LPE
 	SuperBlock(NULL, "LPE"),
@@ -931,6 +936,9 @@ void BlockLocalPositionEstimator::updateSSParams()
 
 void BlockLocalPositionEstimator::predict()
 {
+
+	float h = getDt();
+
 	// if can't update anything, don't propagate
 	// state or covariance
 	if (!_validXY && !_validZ) { return; }
@@ -940,6 +948,13 @@ void BlockLocalPositionEstimator::predict()
 		_eul = matrix::Euler<float>(q);
 		_R_att = matrix::Dcm<float>(q);
 		Vector3f a(_sub_sensor.get().accelerometer_m_s2);
+		//correct for non-centered IMU location:
+		float yawspeed_current = _sub_att.get().yawspeed;
+		float a_c = -r_x * (yawspeed_current * yawspeed_current); //centripetal acceleration
+		float a_t = r_x * (yawspeed_current - yawspeed_last) / h; //tangential acceleration
+		yawspeed_last = yawspeed_current;
+		a = a - Vector3f(a_c, a_t, 0);
+
 		// note, bias is removed in dynamics function
 		_u = _R_att * a;
 		_u(U_az) += 9.81f; // add g
@@ -955,7 +970,6 @@ void BlockLocalPositionEstimator::predict()
 	// integrate runge kutta 4th order
 	// TODO move rk4 algorithm to matrixlib
 	// https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
-	float h = getDt();
 	Vector<float, n_x> k1, k2, k3, k4;
 	k1 = dynamics(0, _x, _u);
 	k2 = dynamics(h / 2, _x + k1 * h / 2, _u);
