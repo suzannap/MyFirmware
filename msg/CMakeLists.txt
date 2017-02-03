@@ -124,6 +124,7 @@ set(msg_file_names
 	vehicle_roi.msg
 	mount_status.msg
 	collision_report.msg
+	pozyx_status.msg
 	)
 
 # Get absolute paths

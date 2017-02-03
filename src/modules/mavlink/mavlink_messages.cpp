@@ -93,6 +93,9 @@
 #include <uORB/topics/collision_report.h>
 #include <uORB/uORB.h>
 
+#include <uORB/topics/pozyx_status.h>
+#include <v1.0/waterbees_messages/mavlink_msg_pozyx_tagstatus.h>
+
 
 static uint16_t cm_uint16_from_m_float(float m);
 static void get_mavlink_mode_state(struct vehicle_status_s *status, uint8_t *mavlink_state,
@@ -3592,6 +3595,70 @@ protected:
 	}
 };
 
+class MavlinkStreamPozyxTagStatus : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamPozyxTagStatus::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "POZYX_TAGSTATUS";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_POZYX_TAGSTATUS;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamPozyxTagStatus(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_POZYX_TAGSTATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_sub;
+	uint64_t _pozyx_status_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamPozyxTagStatus(MavlinkStreamPozyxTagStatus &);
+	MavlinkStreamPozyxTagStatus &operator = (const MavlinkStreamPozyxTagStatus &);
+
+protected:
+	explicit MavlinkStreamPozyxTagStatus(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_sub(_mavlink->add_orb_subscription(ORB_ID(pozyx_status))),
+		_pozyx_status_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct pozyx_status_s _pozyx_status;
+
+		if (_sub->update(&_pozyx_status_time, &_pozyx_status)) {
+
+			mavlink_pozyx_tagstatus_t msg;
+
+			msg.id = _pozyx_status.id;
+			msg.tag_id = _pozyx_status.tag_id;
+			msg.result = _pozyx_status.result;
+
+			mavlink_msg_pozyx_tagstatus_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
+};
+
 const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static, &MavlinkStreamHeartbeat::get_id_static),
 	new StreamListItem(&MavlinkStreamStatustext::new_instance, &MavlinkStreamStatustext::get_name_static, &MavlinkStreamStatustext::get_id_static),
@@ -3638,5 +3705,6 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamCollision::new_instance, &MavlinkStreamCollision::get_name_static, &MavlinkStreamCollision::get_id_static),
 	new StreamListItem(&MavlinkStreamWind::new_instance, &MavlinkStreamWind::get_name_static, &MavlinkStreamWind::get_id_static),
 	new StreamListItem(&MavlinkStreamMountStatus::new_instance, &MavlinkStreamMountStatus::get_name_static, &MavlinkStreamMountStatus::get_id_static),
+	new StreamListItem(&MavlinkStreamPozyxTagStatus::new_instance, &MavlinkStreamPozyxTagStatus::get_name_static, &MavlinkStreamPozyxTagStatus::get_id_static),
 	nullptr
 };

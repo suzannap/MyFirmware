@@ -18,6 +18,7 @@
 
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
+#include <uORB/topics/pozyx_status.h>
 
 #include "pozyx.h"
 
@@ -789,6 +790,11 @@ pozyx_commands(int argc, char *argv[])
 	struct vehicle_command_s cmd;
 	memset(&cmd, 0, sizeof(cmd));
 
+	/* Publish Status Topic */
+	struct pozyx_status_s status;
+	memset(&status, 0, sizeof(status));
+	orb_advert_t status_pub_fd = orb_advertise(ORB_ID(pozyx_status), &status);
+
 	/* command ack 
 	orb_advert_t command_ack_pub = nullptr;
 	struct vehicle_command_ack_s command_ack;
@@ -837,8 +843,67 @@ pozyx_commands(int argc, char *argv[])
 			orb_copy(ORB_ID(vehicle_command), cmd_sub, &cmd);
 
 			/* handle relevant commands */
-			if (cmd.command == 31010) {
+			/*if (cmd.command == 31010) {
 				pozyx::getposition(POZYX_BUS_ALL, 2, false);
+			}*/
+			if (cmd.command == MAV_CMD_POZYX_START) {
+				//This needs redesigned, since the thream must be running for this to happen
+				pozyx::start(POZYX_BUS_ALL);
+			}
+			if (cmd.command == MAV_CMD_POZYX_STOP) {
+				thread_should_exit = true;
+			}
+			if (cmd.command == MAV_CMD_POZYX_GETSTATUS) {
+				//This needs redesigned, since the thread must be running for this to happen
+				if (thread_running) {
+					warnx("\trunning\n");
+				} else {
+					warnx("\tnot started\n");
+				}
+			}
+			if (cmd.command == MAV_CMD_POZYX_GETTAGSTATUS) {
+				//pozyx::test(POZYX_BUS_ALL, 2);
+
+				status.id = 1;
+				status.tag_id = 1;
+				status.result = 1;
+				orb_publish(ORB_ID(pozyx_status),status_pub_fd, &status);
+
+			}
+			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
+				pozyx::getposition(POZYX_BUS_ALL, 2, false);
+			}
+			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
+				pozyx::clearanchors(POZYX_BUS_ALL, 2);
+			}
+			if (cmd.command == MAV_CMD_POZYX_ADDANCHOR) {
+				//To Be Implemented
+
+			}
+			if (cmd.command == MAV_CMD_POZYX_GETANCHORS) {
+				pozyx::getanchors(POZYX_BUS_ALL, 2);
+			}
+			if (cmd.command == MAV_CMD_POZYX_GETUWB) {
+				pozyx::getuwb(POZYX_BUS_ALL, 2);
+			}
+			if (cmd.command == MAV_CMD_POZYX_SETUWB) {
+				/*if (argc == 6) {
+					uint8_t bitrate = atoi(argv[2]);
+					uint8_t prf = atoi(argv[3]);
+					uint8_t plen = atoi(argv[4]);
+					float gain_db = atoi(argv[5])/2.0;
+					pozyx::setuwb(busid, count, bitrate, prf, plen, gain_db);
+				}
+				else {			
+					PX4_INFO("wrong number of arguments to configure UWB settings. Requires bitrate, prf, plen, gain_db");
+					PX4_INFO("Possible value of bitrate:   0: 110kbits/s    1: 850kbits/s    2: 6.8Mbits/s");
+					PX4_INFO("Possible value of prf:   0: 16MHz    1: 64MHz");
+					PX4_INFO("Possible value of plen: 0-7: 4096-64 symbols. See Pozyx documentation.");
+					PX4_INFO("Possible value of gain_db: integer values 0-67, will be halved to range of 0-33.5dB");
+				} */
+			}
+			if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
+				pozyx::resettofactory(POZYX_BUS_ALL, 2);
 			}
 		}
 	}
