@@ -247,7 +247,7 @@ namespace pozyx
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
 			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 1295)){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 0)){
 
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
@@ -357,6 +357,7 @@ namespace pozyx
 
 			uint8_t num_anchors =6;
 
+			/*
 			//Building 9 channel 2
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
@@ -366,6 +367,7 @@ namespace pozyx
 				{0x0205, 1, {10117, -347, 2071}},
 				{0x0206, 1, {4773, -347, 2071}}
 			};
+			*/
 
 			/*
 			//Building 9 channel 3
@@ -378,6 +380,18 @@ namespace pozyx
 				{0x0306, 1, {3834, -35, 2039}}
 			};
 			*/
+
+			
+			//LRC Tuesday
+			device_coordinates_t anchorlist[num_anchors] = {
+				{0x6032, 1, {17261, 2563, 1753}},
+				{0x6038, 1, {5966, 2578, 1351}},
+				{0x603C, 1, {-2026, -2369, 1800}},
+				{0x6824, 1, {7068, -27554, 1617}},
+				{0x6832, 1, {-2026, -23523, 1798}},
+				{0x6848, 1, {21172, -27550, 1643}}
+			};
+			
 			
 			
 
