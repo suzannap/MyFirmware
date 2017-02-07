@@ -112,4 +112,5 @@ set PWM_AUX_OUT 1234
 param set PWM_AUX_DISARMED 0
 param set PWM_AUX_MIN 1000
 param set PWM_AUX_MAX 2000
-param set RC_MAP_AUX1 6
+param set RC_MAP_AUX1 5
+param set RC_MAP_AUX2 6

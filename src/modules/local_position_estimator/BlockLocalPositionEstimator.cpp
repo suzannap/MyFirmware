@@ -21,7 +21,7 @@ static const float P_MAX = 1.0e6f; // max allowed value in state covariance
 static const float LAND_RATE = 10.0f; // rate of land detector correction
 
 
-static const float r_x = 0.3; //distance of IMU from vehicle center (x direction)
+static const float r_x = 0.3175; //distance of IMU from vehicle center (x direction)
 float yawspeed_last = 0;
 
 
@@ -948,12 +948,13 @@ void BlockLocalPositionEstimator::predict()
 		_eul = matrix::Euler<float>(q);
 		_R_att = matrix::Dcm<float>(q);
 		Vector3f a(_sub_sensor.get().accelerometer_m_s2);
+
 		//correct for non-centered IMU location:
 		float yawspeed_current = _sub_att.get().yawspeed;
-		float a_c = -r_x * (yawspeed_current * yawspeed_current); //centripetal acceleration
-		float a_t = r_x * (yawspeed_current - yawspeed_last) / h; //tangential acceleration
+		float a_c = -r_x * (yawspeed_current * yawspeed_current) * 3.14159f ; //centripetal acceleration
+		float a_t = 0;//r_x * (yawspeed_current - yawspeed_last) / (h * 3.1419f); //tangential acceleration
 		yawspeed_last = yawspeed_current;
-		a = a - Vector3f(a_c, a_t, 0);
+		a = a - Vector3f(a_c, a_t, 0); //vehicle coordinates
 
 		// note, bias is removed in dynamics function
 		_u = _R_att * a;
