@@ -954,9 +954,9 @@ void BlockLocalPositionEstimator::predict()
 		float pitchspeed_current = _sub_att.get().pitchspeed;
 		float a_c = -r_x * (yawspeed_current * yawspeed_current + pitchspeed_current * pitchspeed_current);// ; //centripetal acceleration
 		float a_t = 0;//r_x * (yawspeed_current - yawspeed_last) / h; //tangential acceleration
-		yawspeed_last = yawspeed_current;
-		a = a - Vector3f(a_c, a_t, 0); //vehicle coordinates
+		a = a - Vector3f(a_c, a_t, 0); //correct for rotation offset in vehicle coordinates
 
+		a = 0.1f * a; //scale down accelerometer adjustment
 		// note, bias is removed in dynamics function
 		_u = _R_att * a;
 		_u(U_az) += 9.81f; // add g

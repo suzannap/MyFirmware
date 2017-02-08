@@ -85,6 +85,7 @@ namespace pozyx
 	void 	config(enum POZYX_BUS busid, int count);
 	void	reset(enum POZYX_BUS busid, int count);
 	void	getposition(enum POZYX_BUS busid, int count, bool print_result);
+	void	getpositiontest(enum POZYX_BUS busid, int count, bool print_result);
 	void	addanchor(enum POZYX_BUS busid, int count, uint16_t network_id, int32_t x, int32_t y, int32_t z);
 	void	autoanchors(enum POZYX_BUS busid, int count);
 	void	getanchors(enum POZYX_BUS busid, int count);
@@ -345,6 +346,27 @@ namespace pozyx
 			}
 		}
 	}
+		
+	void
+	getpositiontest(enum POZYX_BUS busid, int count, bool print_result)
+	{
+
+		struct att_pos_mocap_s pos;
+
+		pos.q[0] = 1;
+		pos.q[1] = 0;
+		pos.q[2] = 0;
+		pos.q[3] = 0;
+
+		pos.timestamp = hrt_absolute_time();
+		pos.x = 0;
+		pos.y =0; 
+		pos.z =0;
+		orb_advert_t pos_pub = orb_advertise(ORB_ID(att_pos_mocap), &pos);
+		orb_publish(ORB_ID(att_pos_mocap), pos_pub, &pos);
+
+	}
+
 
 	void
 	config(enum POZYX_BUS busid, int count)
@@ -355,23 +377,17 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			uint8_t num_anchors =6;
+			uint8_t num_anchors =12;
 
 			
-			//Building 9 channel 2
+			//Building 9 channel 2/3
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
 				{0x0202, 1, {-314, -13520, 1847}},
 				{0x0203, 1, {5686, -21169, 1972}},
 				{0x0204, 1, {15509, -1383, 8251}},
 				{0x0205, 1, {10117, -347, 2071}},
-				{0x0206, 1, {4773, -347, 2071}}
-			};
-			
-
-			/*
-			//Building 9 channel 3
-			device_coordinates_t anchorlist[num_anchors] = {
+				{0x0206, 1, {4773, -347, 2071}},
 				{0x0301, 1, {-315, -7623, 1811}},
 				{0x0302, 1, {-313, -13758, 1865}},
 				{0x0303, 1, {5888, -21170, 1970}},
@@ -379,7 +395,6 @@ namespace pozyx
 				{0x0305, 1, {10168, -340, 2083}},
 				{0x0306, 1, {3834, -35, 2039}}
 			};
-			*/
 
 			/*		
 			//LRC Tuesday
@@ -637,7 +652,14 @@ pozyx_main(int argc, char *argv[])
 			}
 
 			thread_should_exit = false;
-			/*
+/*
+				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
+												SCHED_DEFAULT, 
+												SCHED_PRIORITY_DEFAULT, 
+												2000, 
+												pozyx_pub_main,
+												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
+			
 			if (count == 1) {
 				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
 												SCHED_DEFAULT, 
@@ -654,6 +676,7 @@ pozyx_main(int argc, char *argv[])
 												pozyx_pub_main_2,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 			}
+			
 			*/
 				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
 												SCHED_DEFAULT, 
@@ -782,7 +805,7 @@ pozyx_pub_main(int argc, char *argv[])
 	thread_running = true;
 
 	while (!thread_should_exit) {
-		pozyx::getposition(POZYX_BUS_ALL, 1, false);
+		pozyx::getpositiontest(POZYX_BUS_ALL, 1, false);
 		usleep(1000000);
 	}
 

@@ -13,11 +13,7 @@ sh /etc/init.d/rc.mc_defaults
 #set VEHICLE_TYPE 11
 pozyx start
 
-if [ $AUTOCNF == yes ]
-then
-	#each vehicle needs unique sysID
-	param set MAV_SYS_ID 10
-fi
+param set MAV_SYS_ID 10
 param set MAV_BROADCAST 1
 
 
