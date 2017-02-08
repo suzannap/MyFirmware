@@ -951,8 +951,9 @@ void BlockLocalPositionEstimator::predict()
 
 		//correct for non-centered IMU location:
 		float yawspeed_current = _sub_att.get().yawspeed;
-		float a_c = -r_x * (yawspeed_current * yawspeed_current) * 3.14159f ; //centripetal acceleration
-		float a_t = 0;//r_x * (yawspeed_current - yawspeed_last) / (h * 3.1419f); //tangential acceleration
+		float pitchspeed_current = _sub_att.get().pitchspeed;
+		float a_c = -r_x * (yawspeed_current * yawspeed_current + pitchspeed_current * pitchspeed_current);// ; //centripetal acceleration
+		float a_t = 0;//r_x * (yawspeed_current - yawspeed_last) / h; //tangential acceleration
 		yawspeed_last = yawspeed_current;
 		a = a - Vector3f(a_c, a_t, 0); //vehicle coordinates
 

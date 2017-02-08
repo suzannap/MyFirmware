@@ -247,7 +247,7 @@ namespace pozyx
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
 			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 0)){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -100)){
 
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
@@ -258,9 +258,9 @@ namespace pozyx
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
 					totalerror = abs(poz_error.xy);
-					if(totalerror > 500 || totalerror < 10) {
+					if(totalerror > 600 || totalerror < 5) {
 						// not a good reading, try again
-						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
+						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -100)){
 							if (print_result) {
 								PX4_INFO("2nd measure current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 							}
@@ -269,7 +269,7 @@ namespace pozyx
 									PX4_INFO("2nd measure Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 								}
 								totalerror = abs(poz_error.xy);
-								if(totalerror > 500 || totalerror < 10) {
+								if(totalerror > 600 || totalerror < 5) {
 									//2nd reading also bad
 									poz_coordinates[i].x = 0;
 									poz_coordinates[i].y = 0;
@@ -323,7 +323,7 @@ namespace pozyx
 			pos.q[3] = myq(3);
 
 			float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].x),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
-			if ((sensor_distance > 1300) || (sensor_distance < 700)){
+			if ((sensor_distance > 1400) || (sensor_distance < 600)){
 				//sensor measurements are not consistent
 				validcount = 0;
 			}
@@ -357,7 +357,7 @@ namespace pozyx
 
 			uint8_t num_anchors =6;
 
-			/*
+			
 			//Building 9 channel 2
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
@@ -367,7 +367,7 @@ namespace pozyx
 				{0x0205, 1, {10117, -347, 2071}},
 				{0x0206, 1, {4773, -347, 2071}}
 			};
-			*/
+			
 
 			/*
 			//Building 9 channel 3
@@ -381,16 +381,19 @@ namespace pozyx
 			};
 			*/
 
-			
+			/*		
 			//LRC Tuesday
+			num_anchors =7;	
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x6032, 1, {17261, 2563, 1753}},
 				{0x6038, 1, {5966, 2578, 1351}},
 				{0x603C, 1, {-2026, -2369, 1800}},
 				{0x6824, 1, {7068, -27554, 1617}},
 				{0x6832, 1, {-2026, -23523, 1798}},
-				{0x6848, 1, {21172, -27550, 1643}}
+				{0x6848, 1, {21172, -27550, 1643}},
+				{0x6853, 1, {23547, -14276, 1836}}
 			};
+			*/
 			
 			
 			

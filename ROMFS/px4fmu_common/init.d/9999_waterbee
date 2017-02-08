@@ -43,7 +43,7 @@ param set MC_PITCH_P 0
 param set MC_PITCHRATE_P 0.6
 param set MC_PITCH_TC 0.25
 param set MC_ROLL_P 0
-param set MC_ROLL_P 0.6
+param set MC_ROLLRATE_P 0.6
 param set MC_ROLL_TC 0.25
 param set MC_YAWRATE_D 0.1
 param set MC_YAWRATE_FF 0.1
@@ -62,9 +62,9 @@ param set MPC_TILTMAX_LND 90
 param set MPC_VELD_LP 3
 param set MPC_XY_CRUISE 0.3
 param set MPC_XY_FF 0.5
-param set MPC_XY_P 0.2
+param set MPC_XY_P 5
 param set MPC_XY_VEL_D 0.1
-param set MPC_XY_VEL_I 0.5
+param set MPC_XY_VEL_I 0
 param set MPC_XY_VEL_MAX 0.9
 param set MPC_XY_VEL_P 0.15
 
