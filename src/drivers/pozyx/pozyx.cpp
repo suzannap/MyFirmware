@@ -19,6 +19,10 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/pozyx_status.h>
+#include <uORB/topics/pozyx_tagstatus.h>
+#include <uORB/topics/pozyx_position.h>
+#include <uORB/topics/pozyx_anchor.h>
+#include <uORB/topics/pozyx_uwb.h>
 
 #include "pozyx.h"
 
@@ -83,14 +87,18 @@ namespace pozyx
 	bool 	start_bus(struct pozyx_bus_option &bus);
 	struct 	pozyx_bus_option &find_bus(enum POZYX_BUS busid, unsigned startid);
 	void 	test(enum POZYX_BUS busid, int count);
+	void	testorb(enum POZYX_BUS busid, int count);
 	void 	config(enum POZYX_BUS busid, int count);
 	void	reset(enum POZYX_BUS busid, int count);
 	void	getposition(enum POZYX_BUS busid, int count, bool print_result);
+	void	getpositionorb(enum POZYX_BUS busid, int count);
 	void	addanchor(enum POZYX_BUS busid, int count, uint16_t network_id, int32_t x, int32_t y, int32_t z);
 	void	autoanchors(enum POZYX_BUS busid, int count);
 	void	getanchors(enum POZYX_BUS busid, int count);
+	void	getanchorsorb(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void	getuwb(enum POZYX_BUS busid, int count);
+	void	getuwborb(enum POZYX_BUS busid, int count);
 	void	setuwb(enum POZYX_BUS busid, int count, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db);
 	void	resettofactory(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
@@ -221,6 +229,81 @@ namespace pozyx
 		}
 	}
 
+	//Basic Functional tests with result sent over uORB
+	void
+	testorb(enum POZYX_BUS busid, int count)
+	{
+
+		struct pozyx_tagstatus_s status;
+		memset(&status, 0, sizeof(status));
+		orb_advert_t status_pub_fd = orb_advertise(ORB_ID(pozyx_tagstatus), &status);
+
+		unsigned startid = 0;
+		int testread;
+		
+
+		for (int i=0; i<count; i++){	
+			struct pozyx_bus_option &bus = find_bus(busid, startid);
+			startid = bus.index + 1;	
+
+			const char *path = bus.devpath;
+			int fd = px4_open(path, O_RDONLY);
+			status.result = 0;
+
+
+			if (fd < 0) {
+				//err(1, "%s open failed (try 'pozyx start')", path);
+				status.result += 1;			
+			}
+		
+			//Get Tag Index
+			status.id = bus.index;
+
+			//get tag ID/ Whoami
+			uint8_t whoami = 0;
+			testread = bus.dev->regRead(POZYX_WHO_AM_I, &whoami, 1);
+			//PX4_INFO("value of whoami is: 0x%x", whoami);
+			status.tag_id = whoami;
+
+			if (testread != POZYX_SUCCESS) {
+				//err(1, "immediate read failed");
+				status.result += 2;
+			}
+			else {
+				if (whoami == POZYX_WHOAMI_EXPECTED){
+					//PX4_INFO("Who Am I Check Successful");
+				}
+				else{
+					//PX4_INFO("Who Am I Check Failed: 0x%x",whoami);
+					status.result += 4;
+				}
+			}
+
+			//test a function call by blinking LED3
+			uint8_t funcbuf[100];
+			funcbuf[0] = 0x44;
+
+			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
+			if (funcbuf[0] != 1) {
+				//err(1, "Function test failed");
+				status.result += 8;
+			}
+			//PX4_INFO("LED3 turned On... ");
+			sleep(2);
+			funcbuf[0] = 0x40;
+			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
+			if (funcbuf[0] != 1) {
+				//err(1, "Function test failed");
+				status.result += 16;
+			}
+			//PX4_INFO("LED3 turned Off");
+
+			//PX4_INFO("Tag %d PASS", bus.index);
+			orb_publish(ORB_ID(pozyx_tagstatus),status_pub_fd, &status);
+
+		}
+	}
+
 	void
 	reset(enum POZYX_BUS busid, int count)
 	{
@@ -344,6 +427,149 @@ namespace pozyx
 			if (print_result) {
 				PX4_INFO("No valid RTLS measurements");
 			}
+		}
+	}
+
+
+	void
+	getpositionorb(enum POZYX_BUS busid, int count)
+	{
+
+		/* Publish Position Topic */
+		struct pozyx_position_s position;
+		memset(&position, 0, sizeof(position));
+		orb_advert_t position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
+		
+	
+		coordinates_t poz_coordinates[count];
+		//struct att_pos_mocap_s pos;
+		unsigned startid = 0;
+		int validcount = 0;
+		int totalerror = 0;
+
+
+		position.x_pos = 0;
+		position.y_pos = 0;
+		position.z_pos = -5;
+
+		for (int i=0; i<count; i++){
+			struct pozyx_bus_option &bus = find_bus(busid, startid);
+			startid = bus.index + 1;
+
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
+
+
+				//PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
+				position.id = bus.index;
+				position.x_pos = poz_coordinates[i].x;
+				position.y_pos = poz_coordinates[i].y;
+				position.z_pos = poz_coordinates[i].z;
+
+				pos_error_t poz_error;
+				if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
+
+					//PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
+					position.x_cov = poz_error.x;
+					position.y_cov = poz_error.y;
+					position.z_cov = poz_error.z;
+					position.xy_cov = poz_error.xy;
+					position.xz_cov = poz_error.xz;
+					position.yz_cov = poz_error.yz;
+
+					totalerror = abs(poz_error.xy);
+					if(totalerror > 300 || totalerror < 10) {
+						// not a good reading, try again
+						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
+
+							//PX4_INFO("2nd measure current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
+							position.id = bus.index;
+							position.x_pos = poz_coordinates[i].x;
+							position.y_pos = poz_coordinates[i].y;
+							position.z_pos = poz_coordinates[i].z;
+
+							if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
+
+								//PX4_INFO("2nd measure Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
+								position.x_cov = poz_error.x;
+								position.y_cov = poz_error.y;
+								position.z_cov = poz_error.z;
+								position.xy_cov = poz_error.xy;
+								position.xz_cov = poz_error.xz;
+								position.yz_cov = poz_error.yz;
+
+								totalerror = abs(poz_error.xy);
+								if(totalerror > 300 || totalerror < 10) {
+									//2nd reading also bad
+									//poz_coordinates[i].x = 0;
+									//poz_coordinates[i].y = 0;
+									//PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);
+									position.x_cov = 0;
+									position.y_cov = 0;
+									position.z_cov = 0;
+									position.xy_cov = 0;
+									position.xz_cov = 0;
+									position.yz_cov = 0;
+								}
+								else {
+									validcount += 1;
+								}
+							}
+						}
+					}
+					else {
+						validcount += 1;
+					}
+				}
+			}
+			//pos.x += poz_coordinates[i].x;
+			//pos.y += poz_coordinates[i].y;
+			//pos.z += poz_coordinates[i].z;
+
+			if (count == 1) {
+				quaternion_t poz_orientation;
+				if (POZYX_SUCCESS == bus.dev->getQuaternion(&poz_orientation)){
+
+					//PX4_INFO("Current orientation: %1.4f  %1.4f  %1.4f  %1.4f", (double)poz_orientation.weight, (double)poz_orientation.x, (double)poz_orientation.y, (double)poz_orientation.z);
+					
+					//change orientation from funny vertical to NED rotate 180 degrees about z and -90 about x
+					//[q0, q1, q2, q3] >>> [-q0, -q2, -q1, q3]
+					//pos.q[0] = -poz_orientation.weight;
+					//pos.q[1] = -poz_orientation.y;
+					//pos.q[2] = -poz_orientation.x;
+					//pos.q[3] = poz_orientation.z;	
+				}			
+			}
+		}
+
+
+		if (validcount > 1) {
+		//if (false) {
+			double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
+
+				//PX4_INFO("Current yaw: %f deg.", (yaw * 180 / 3.14159));
+			matrix::Vector3f pozyx_orient(0, 0, yaw);
+			matrix::Quatf myq(1.0, 0, 0, 0);
+			myq.from_axis_angle(pozyx_orient);
+			//pos.q[0] = myq(0);
+			//pos.q[1] = myq(1);
+			//pos.q[2] = myq(2);
+			//pos.q[3] = myq(3);
+
+			float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].z),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
+			if ((sensor_distance > 1150) || (sensor_distance < 850)){
+				//sensor measurements are not consistent
+				validcount = 0;
+			}
+		}	
+
+		//pos.timestamp = hrt_absolute_time();
+
+		if (validcount == count) {
+			//change position from NWU to NED and from m to mm
+			position.x_pos /= (validcount*1000);
+			position.y_pos /= (-validcount*1000);
+			position.z_pos /= (-count*1000);
+			orb_publish(ORB_ID(pozyx_position),position_pub_fd, &position);
 		}
 	}
 
@@ -485,6 +711,46 @@ namespace pozyx
 
 
 	void
+	getanchorsorb(enum POZYX_BUS busid, int count)
+	{
+
+		struct pozyx_anchor_s anchor;
+		memset(&anchor, 0, sizeof(anchor));
+		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
+
+		unsigned startid = 0;
+
+		for (int i=0; i<count; i++){			
+			struct pozyx_bus_option &bus = find_bus(busid, startid);
+			startid = bus.index + 1;
+			uint8_t device_list_size;
+
+			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
+				uint16_t anchors[device_list_size];
+				//PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
+				anchor.id = bus.index;
+				anchor.anchor_ct = device_list_size;
+				
+				if (bus.dev->getAnchorIds(anchors, device_list_size) == POZYX_SUCCESS) {
+					coordinates_t coordinates;
+					for (int j=0; j<device_list_size; j++){
+						if (bus.dev->getDeviceCoordinates(anchors[j], &coordinates) == POZYX_SUCCESS){
+							//PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
+							anchor.anchor_id = anchors[j];
+							anchor.x_pos = coordinates.x;
+							anchor.y_pos = coordinates.y;
+							anchor.z_pos = coordinates.z;
+							
+							orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);							
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	void
 	setuwb(enum POZYX_BUS busid, int count, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db)
 	{
 		unsigned startid = 0;
@@ -547,6 +813,35 @@ namespace pozyx
 		}
 	}
 
+	void
+	getuwborb(enum POZYX_BUS busid, int count)
+	{
+
+		/* Publish UWB Topic */
+		struct pozyx_uwb_s uwb;
+		memset(&uwb, 0, sizeof(uwb));
+		orb_advert_t uwb_pub_fd = orb_advertise(ORB_ID(pozyx_uwb), &uwb);
+
+		unsigned startid = 0;
+		UWB_settings_t mysettings;
+
+		for (int i=0; i<count; i++){			
+			struct pozyx_bus_option &bus = find_bus(busid, startid);
+			startid = bus.index + 1;
+
+			if (bus.dev->getUWBSettings(&mysettings) == POZYX_SUCCESS){
+				//PX4_INFO("UWB settings on tag %d: channel %d, bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", bus.index, mysettings.channel, mysettings.bitrate, mysettings.prf, mysettings.plen, (double)mysettings.gain_db);
+				uwb.id = bus.index;
+				//	mysettings.channel;
+				uwb.bitrate = mysettings.bitrate;
+				uwb.prf = mysettings.prf;
+				uwb.plen = mysettings.plen;
+				uwb.gain_db = (double)mysettings.gain_db;
+
+				orb_publish(ORB_ID(pozyx_uwb),uwb_pub_fd, &uwb);							
+			}
+		}
+	}
 
 	void
 	resettofactory(enum POZYX_BUS busid, int count)
@@ -791,9 +1086,32 @@ pozyx_commands(int argc, char *argv[])
 	memset(&cmd, 0, sizeof(cmd));
 
 	/* Publish Status Topic */
+	/*
 	struct pozyx_status_s status;
 	memset(&status, 0, sizeof(status));
 	orb_advert_t status_pub_fd = orb_advertise(ORB_ID(pozyx_status), &status);
+	*/
+
+	/* Publish Position Topic */
+	/*
+	struct pozyx_position_s position;
+	memset(&position, 0, sizeof(position));
+	orb_advert_t position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
+	*/
+
+	/* Publish Anchor Topic */
+	/*
+	struct pozyx_anchor_s anchor;
+	memset(&anchor, 0, sizeof(anchor));
+	orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
+	*/
+
+	/* Publish UWB Topic */
+	/*
+	struct pozyx_uwb_s uwb;
+	memset(&uwb, 0, sizeof(uwb));
+	orb_advert_t uwb_pub_fd = orb_advertise(ORB_ID(pozyx_uwb), &uwb);
+	*/
 
 	/* command ack 
 	orb_advert_t command_ack_pub = nullptr;
@@ -843,12 +1161,9 @@ pozyx_commands(int argc, char *argv[])
 			orb_copy(ORB_ID(vehicle_command), cmd_sub, &cmd);
 
 			/* handle relevant commands */
-			/*if (cmd.command == 31010) {
-				pozyx::getposition(POZYX_BUS_ALL, 2, false);
-			}*/
+
 			if (cmd.command == MAV_CMD_POZYX_START) {
-				//This needs redesigned, since the thream must be running for this to happen
-				pozyx::start(POZYX_BUS_ALL);
+				//This command is extraneous since the daemon is already running.
 			}
 			if (cmd.command == MAV_CMD_POZYX_STOP) {
 				thread_should_exit = true;
@@ -862,45 +1177,35 @@ pozyx_commands(int argc, char *argv[])
 				}
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETTAGSTATUS) {
-				//pozyx::test(POZYX_BUS_ALL, 2);
-
-				status.id = 1;
-				status.tag_id = 1;
-				status.result = 1;
-				orb_publish(ORB_ID(pozyx_status),status_pub_fd, &status);
-
+				pozyx::testorb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
-				pozyx::getposition(POZYX_BUS_ALL, 2, false);
+				pozyx::getpositionorb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
 				pozyx::clearanchors(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_ADDANCHOR) {
-				//To Be Implemented
-
+				//uint8_t id = static_cast<int>(cmd.param1);
+				uint16_t anchor_id = static_cast<int>(cmd.param2);
+				uint32_t x = static_cast<int>(cmd.param3);
+				uint32_t y = static_cast<int>(cmd.param4);
+				uint32_t z = static_cast<int>(cmd.param5);
+				pozyx::addanchor(POZYX_BUS_ALL, 2, anchor_id, x, y, z);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETANCHORS) {
-				pozyx::getanchors(POZYX_BUS_ALL, 2);
+				pozyx::getanchorsorb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETUWB) {
-				pozyx::getuwb(POZYX_BUS_ALL, 2);
+				pozyx::getuwborb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_SETUWB) {
-				/*if (argc == 6) {
-					uint8_t bitrate = atoi(argv[2]);
-					uint8_t prf = atoi(argv[3]);
-					uint8_t plen = atoi(argv[4]);
-					float gain_db = atoi(argv[5])/2.0;
-					pozyx::setuwb(busid, count, bitrate, prf, plen, gain_db);
-				}
-				else {			
-					PX4_INFO("wrong number of arguments to configure UWB settings. Requires bitrate, prf, plen, gain_db");
-					PX4_INFO("Possible value of bitrate:   0: 110kbits/s    1: 850kbits/s    2: 6.8Mbits/s");
-					PX4_INFO("Possible value of prf:   0: 16MHz    1: 64MHz");
-					PX4_INFO("Possible value of plen: 0-7: 4096-64 symbols. See Pozyx documentation.");
-					PX4_INFO("Possible value of gain_db: integer values 0-67, will be halved to range of 0-33.5dB");
-				} */
+				//uint8_t id = static_cast<int>(cmd.param1);
+				uint8_t bitrate = static_cast<int>(cmd.param2);
+				uint8_t prf = static_cast<int>(cmd.param3);
+				uint8_t plen = static_cast<int>(cmd.param4);
+				float gain_db = cmd.param5/2.0;
+				pozyx::setuwb(POZYX_BUS_ALL, 2, bitrate, prf, plen, gain_db);
 			}
 			if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
 				pozyx::resettofactory(POZYX_BUS_ALL, 2);
