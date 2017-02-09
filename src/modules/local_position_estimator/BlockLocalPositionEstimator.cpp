@@ -956,10 +956,11 @@ void BlockLocalPositionEstimator::predict()
 		float a_t = 0;//r_x * (yawspeed_current - yawspeed_last) / h; //tangential acceleration
 		a = a - Vector3f(a_c, a_t, 0); //correct for rotation offset in vehicle coordinates
 
-		a = 0.1f * a; //scale down accelerometer adjustment
 		// note, bias is removed in dynamics function
 		_u = _R_att * a;
 		_u(U_az) += 9.81f; // add g
+
+		_u = 0.2f * _u; //scale down accelerometer contribution
 
 	} else {
 		_u = Vector3f(0, 0, 0);

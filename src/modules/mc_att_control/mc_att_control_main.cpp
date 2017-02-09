@@ -98,7 +98,7 @@
 extern "C" __EXPORT int mc_att_control_main(int argc, char *argv[]);
 
 #define YAW_DEADZONE	0.05f
-#define MIN_TAKEOFF_THRUST    0.2f
+#define MIN_TAKEOFF_THRUST    -0.2f
 #define RATES_I_LIMIT	0.3f
 #define MANUAL_THROTTLE_MAX_MULTICOPTER	0.9f
 #define ATTITUDE_TC_DEFAULT 0.2f
@@ -819,10 +819,10 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 		       _params.rate_ff.emult(_rates_sp);
 	
 	//Tait WaterBee: overwrite roll/pitch commands with straight passthrough from pos controller
-	if (_params.att_p(0) < 0.001f) {
+	if (_params.att_p(0) < 0.01f) {
 		_att_control(0) = _params.rate_p(0) * _v_att_sp.roll_body;
 	}
-	if (_params.att_p(1) < 0.001f) {
+	if (_params.att_p(1) < 0.01f) {
 		_att_control(1) = _params.rate_p(1) * _v_att_sp.pitch_body;
 	}
 

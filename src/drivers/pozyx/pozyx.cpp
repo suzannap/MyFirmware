@@ -248,7 +248,7 @@ namespace pozyx
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
 			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -100)){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 1400)){
 
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
@@ -258,19 +258,19 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					totalerror = abs(poz_error.xy);
-					if(totalerror > 600 || totalerror < 5) {
+					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+					if(poz_error.xy > 500 || totalerror < 7) {
 						// not a good reading, try again
-						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -100)){
+						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 1400)){
 							if (print_result) {
 								PX4_INFO("2nd measure current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 							}
 							if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
 								if (print_result) {
 									PX4_INFO("2nd measure Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-								}
-								totalerror = abs(poz_error.xy);
-								if(totalerror > 600 || totalerror < 5) {
+								}								
+								totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+								if(poz_error.xy > 500 || totalerror < 7) {
 									//2nd reading also bad
 									poz_coordinates[i].x = 0;
 									poz_coordinates[i].y = 0;
@@ -379,7 +379,6 @@ namespace pozyx
 
 			uint8_t num_anchors =12;
 
-			
 			//Building 9 channel 2/3
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
@@ -396,22 +395,23 @@ namespace pozyx
 				{0x0306, 1, {3834, -35, 2039}}
 			};
 
-			/*		
-			//LRC Tuesday
-			num_anchors =7;	
+
+			/*	
+			//LRC Thursday
+			num_anchors =8;	
 			device_coordinates_t anchorlist[num_anchors] = {
-				{0x6032, 1, {17261, 2563, 1753}},
-				{0x6038, 1, {5966, 2578, 1351}},
-				{0x603C, 1, {-2026, -2369, 1800}},
-				{0x6824, 1, {7068, -27554, 1617}},
-				{0x6832, 1, {-2026, -23523, 1798}},
-				{0x6848, 1, {21172, -27550, 1643}},
-				{0x6853, 1, {23547, -14276, 1836}}
+				{0x6028, 1, {-14457, 18206, 1814}},
+				{0x6032, 1, {6798, 2253, 1848}},
+				{0x6038, 1, {13967, 19721, 1823}},
+				{0x603C, 1, {7448, 2786, 1748}},
+				{0x6824, 1, {-3068, -509, 1846}},
+				{0x6832, 1, {-8079, 1569, 1829}},
+				{0x6848, 1, {-12395, 23207, 1339}},
+				{0x6853, 1, {-2063, -31762, 1724}}
 			};
-			*/
 			
-			
-			
+				
+			*/			
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
 				for (int j = 0; j < num_anchors; j++) {
@@ -676,12 +676,12 @@ pozyx_main(int argc, char *argv[])
 												pozyx_pub_main_2,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 			}
-			
+
 			*/
 				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
 												SCHED_DEFAULT, 
-												SCHED_PRIORITY_DEFAULT, 
-												2000, 
+												(SCHED_PRIORITY_DEFAULT + 100), 
+												1000, 
 												pozyx_commands,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 
@@ -857,8 +857,9 @@ pozyx_commands(int argc, char *argv[])
 	fds[0].events = POLLIN;
 
 	while (!thread_should_exit) {
-		/* wait for up to 1000ms for data */
-		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 1000);
+		usleep(100);
+		/* wait for up to 2500ms for data */
+		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 2500);
 
 		/* timed out - periodic check for thread_should_exit, etc. */
 		if (pret == 0) {
