@@ -248,7 +248,7 @@ namespace pozyx
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
 			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 1400)){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 50)){
 
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
@@ -261,7 +261,7 @@ namespace pozyx
 					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
 					if(poz_error.xy > 500 || totalerror < 7) {
 						// not a good reading, try again
-						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 1400)){
+						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 50)){
 							if (print_result) {
 								PX4_INFO("2nd measure current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 							}
@@ -379,6 +379,7 @@ namespace pozyx
 
 			uint8_t num_anchors =12;
 
+			/*
 			//Building 9 channel 2/3
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
@@ -394,24 +395,33 @@ namespace pozyx
 				{0x0305, 1, {10168, -340, 2083}},
 				{0x0306, 1, {3834, -35, 2039}}
 			};
+			*/
 
 
-			/*	
-			//LRC Thursday
-			num_anchors =8;	
+			//Pleasant View
+			num_anchors =18;	
 			device_coordinates_t anchorlist[num_anchors] = {
-				{0x6028, 1, {-14457, 18206, 1814}},
-				{0x6032, 1, {6798, 2253, 1848}},
-				{0x6038, 1, {13967, 19721, 1823}},
-				{0x603C, 1, {7448, 2786, 1748}},
-				{0x6824, 1, {-3068, -509, 1846}},
-				{0x6832, 1, {-8079, 1569, 1829}},
-				{0x6848, 1, {-12395, 23207, 1339}},
-				{0x6853, 1, {-2063, -31762, 1724}}
+				{0x603C, 1, {589, -3302, 1026}},
+				{0x604C, 1, {3202, 9146, 1042}},
+				{0x682E, 1, {-12102, -3313, 1017}},
+				{0x6011, 1, {-3339, 11420, 1037}},
+				{0x6021, 1, {3218, 109, 1046}},
+				{0x6028, 1, {-12770, -3318, 1017}},
+				{0x6030, 1, {-15997, 11421, 1159}},
+				{0x6032, 1, {-53, -3305, 1022}},
+				{0x6034, 1, {3201, 9689, 1035}},
+				{0x6036, 1, {-9634, 11421, 1159}},
+				{0x6037, 1, {-8972, 11420, 1157}},
+				{0x6038, 1, {-18880, -1340, 1020}},
+				{0x6824, 1, {3213, 89, 1523}},
+				{0x6832, 1, {-5777, -3308, 1012}},
+				{0x6848, 1, {-2761, 11419, 1044}},
+				{0x6852, 1, {-18880, -785, 1000}},
+				{0x6853, 1, {-6443, -3309, 1021}},
+				{0x6854, 1, {-15296, 11423, 1175}}
 			};
 			
-				
-			*/			
+					
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
 				for (int j = 0; j < num_anchors; j++) {
@@ -680,7 +690,7 @@ pozyx_main(int argc, char *argv[])
 			*/
 				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
 												SCHED_DEFAULT, 
-												(SCHED_PRIORITY_DEFAULT + 100), 
+												(SCHED_PRIORITY_DEFAULT + 10), 
 												1000, 
 												pozyx_commands,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
