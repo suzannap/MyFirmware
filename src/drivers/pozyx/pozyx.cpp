@@ -699,7 +699,7 @@ pozyx_main(int argc, char *argv[])
 			*/
 				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
 												SCHED_DEFAULT, 
-												(SCHED_PRIORITY_DEFAULT + 50), 
+												(SCHED_PRIORITY_MAX -10), 
 												5400, 
 												pozyx_commands,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
