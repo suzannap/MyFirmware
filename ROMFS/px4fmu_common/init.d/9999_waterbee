@@ -105,7 +105,7 @@ param set PWM_RATE 400
 set MIXER_AUX pass
 set PWM_AUX_RATE 50
 set PWM_AUX_OUT 1234
-param set PWM_AUX_DISARMED 0
+param set PWM_AUX_DISARMED 1000
 param set PWM_AUX_MIN 1000
 param set PWM_AUX_MAX 2000
 param set RC_MAP_AUX1 5

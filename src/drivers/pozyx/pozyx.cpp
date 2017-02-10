@@ -235,7 +235,7 @@ namespace pozyx
 		struct att_pos_mocap_s pos;
 		unsigned startid = 0;
 		int validcount = 0;
-		int totalerror = 0;
+		//int totalerror = 0;
 
 
 		pos.x = 0;
@@ -258,8 +258,11 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
-					if(poz_error.xy > 500 || totalerror < 7) {
+					//totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+					if(poz_error.xy > 500 ) { //|| totalerror < 7
+						poz_coordinates[i].x = 0;
+						poz_coordinates[i].y = 0;
+						/*
 						// not a good reading, try again
 						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 50)){
 							if (print_result) {
@@ -281,6 +284,7 @@ namespace pozyx
 								}
 							}
 						}
+						*/
 					}
 					else {
 						validcount += 1;
@@ -396,27 +400,32 @@ namespace pozyx
 				{0x0306, 1, {3834, -35, 2039}}
 			};
 			*/
-
-
-			//Pleasant View
-			num_anchors =18;	
+			num_anchors =9;	
+			/*
+			//Pleasant View ch2
 			device_coordinates_t anchorlist[num_anchors] = {
-				{0x603C, 1, {589, -3302, 1026}},
-				{0x604C, 1, {3202, 9146, 1042}},
 				{0x682E, 1, {-12102, -3313, 1017}},
 				{0x6011, 1, {-3339, 11420, 1037}},
 				{0x6021, 1, {3218, 109, 1046}},
-				{0x6028, 1, {-12770, -3318, 1017}},
 				{0x6030, 1, {-15997, 11421, 1159}},
 				{0x6032, 1, {-53, -3305, 1022}},
 				{0x6034, 1, {3201, 9689, 1035}},
 				{0x6036, 1, {-9634, 11421, 1159}},
-				{0x6037, 1, {-8972, 11420, 1157}},
-				{0x6038, 1, {-18880, -1340, 1020}},
-				{0x6824, 1, {3213, 89, 1523}},
 				{0x6832, 1, {-5777, -3308, 1012}},
+				{0x6852, 1, {-18880, -785, 1000}}
+			};
+			*/
+
+
+			//Pleasant View ch3
+			device_coordinates_t anchorlist[num_anchors] = {
+				{0x603C, 1, {589, -3302, 1026}},
+				{0x604C, 1, {3202, 9146, 1042}},
+				{0x6038, 1, {-18880, -1340, 1020}},
+				{0x6028, 1, {-12770, -3318, 1017}},
+				{0x6037, 1, {-8972, 11420, 1157}},
+				{0x6824, 1, {3213, 89, 1523}},
 				{0x6848, 1, {-2761, 11419, 1044}},
-				{0x6852, 1, {-18880, -785, 1000}},
 				{0x6853, 1, {-6443, -3309, 1021}},
 				{0x6854, 1, {-15296, 11423, 1175}}
 			};
@@ -690,8 +699,8 @@ pozyx_main(int argc, char *argv[])
 			*/
 				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
 												SCHED_DEFAULT, 
-												(SCHED_PRIORITY_DEFAULT + 10), 
-												1000, 
+												(SCHED_PRIORITY_DEFAULT + 50), 
+												5400, 
 												pozyx_commands,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 
