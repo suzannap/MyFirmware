@@ -312,5 +312,7 @@
 #define MAV_CMD_POZYX_GETUWB              31018
 #define MAV_CMD_POZYX_SETUWB              31019
 #define MAV_CMD_POZYX_RESETTOFACTORY      31020
+#define MAV_CMD_POZYX_SETTHRESHOLDS       31021
+#define MAV_CMD_POZYX_SETHEIGHT           31022
 
 #endif
