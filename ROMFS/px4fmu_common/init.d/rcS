@@ -941,9 +941,6 @@ unset TUNE_ERR
 mavlink boot_complete
 
 
-#add our own MavLink streams for WaterBees:
-mavlink stream -d /dev/ttyS2 -s ATT_POS_MOCAP -r 100
-
 if [ $EXIT_ON_END == yes ]
 then
 	echo "NSH exit"

@@ -56,8 +56,6 @@ enum POZYX_BUS {
 	POZYX_BUS_I2C_ALT_EXTERNAL
 };
 
-int pozyx_pub_main(int argc, char *argv[]);
-int pozyx_pub_main_2(int argc, char *argv[]);
 int pozyx_commands(int argc, char *argv[]);
 extern "C" __EXPORT int pozyx_main(int argc, char *argv[]);
 
@@ -87,7 +85,6 @@ namespace pozyx
 	bool 	start_bus(struct pozyx_bus_option &bus);
 	struct 	pozyx_bus_option &find_bus(enum POZYX_BUS busid, unsigned startid);
 	void 	test(enum POZYX_BUS busid, int count);
-	void	testorb(enum POZYX_BUS busid, int count);
 	void 	config(enum POZYX_BUS busid, int count);
 	void	reset(enum POZYX_BUS busid, int count);
 	void	getposition(enum POZYX_BUS busid, int count, bool print_result);
@@ -96,7 +93,6 @@ namespace pozyx
 	void	addanchor(enum POZYX_BUS busid, int count, uint16_t network_id, int32_t x, int32_t y, int32_t z);
 	void	autoanchors(enum POZYX_BUS busid, int count);
 	void	getanchors(enum POZYX_BUS busid, int count);
-	void	getanchorsorb(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void	getuwb(enum POZYX_BUS busid, int count);
 	void	getuwborb(enum POZYX_BUS busid, int count);
@@ -175,64 +171,10 @@ namespace pozyx
 	}
 
 
-	//basic functional tests
-	void
-	test(enum POZYX_BUS busid, int count)
-	{
-		unsigned startid = 0;
-		int testread;
-		
-
-		for (int i=0; i<count; i++){	
-			struct pozyx_bus_option &bus = find_bus(busid, startid);
-			startid = bus.index + 1;	
-
-			const char *path = bus.devpath;
-			int fd = px4_open(path, O_RDONLY);
-
-			if (fd < 0) {
-				err(1, "%s open failed (try 'pozyx start')", path);			
-			}
-			
-			uint8_t whoami = 0;
-			testread = bus.dev->regRead(POZYX_WHO_AM_I, &whoami, 1);
-			PX4_INFO("value of whoami is: 0x%x", whoami);
-
-			if (testread != POZYX_SUCCESS) {
-				err(1, "immediate read failed");
-			}
-			else {
-				if (whoami == POZYX_WHOAMI_EXPECTED){
-					PX4_INFO("Who Am I Check Successful");
-				}
-				else{
-					PX4_INFO("Who Am I Check Failed: 0x%x",whoami);
-				}
-			}
-			//test a function call by blinking LED3
-			uint8_t funcbuf[100];
-			funcbuf[0] = 0x44;
-
-			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
-			if (funcbuf[0] != 1) {
-				err(1, "Function test failed");
-			}
-			PX4_INFO("LED3 turned On... ");
-			sleep(2);
-			funcbuf[0] = 0x40;
-			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
-			if (funcbuf[0] != 1) {
-				err(1, "Function test failed");
-			}
-			PX4_INFO("LED3 turned Off");
-
-			PX4_INFO("Tag %d PASS", bus.index);
-		}
-	}
 
 	//Basic Functional tests with result sent over uORB
 	void
-	testorb(enum POZYX_BUS busid, int count)
+	test(enum POZYX_BUS busid, int count)
 	{
 
 		struct pozyx_tagstatus_s status;
@@ -253,7 +195,7 @@ namespace pozyx
 
 
 			if (fd < 0) {
-				//err(1, "%s open failed (try 'pozyx start')", path);
+				err(1, "%s open failed (try 'pozyx start')", path);
 				status.result += 1;			
 			}
 		
@@ -263,23 +205,24 @@ namespace pozyx
 			//Get Tag ID
 			uint16_t devid = 0;
 			testread = bus.dev->getNetworkId(&devid);
+			PX4_INFO("Device ID is: 0x%x", devid);
 			status.tag_id = devid;
 
-			//get tag ID/ Whoami
+			//check Whoami
 			uint8_t whoami = 0;
 			testread = bus.dev->regRead(POZYX_WHO_AM_I, &whoami, 1);
-			//PX4_INFO("value of whoami is: 0x%x", whoami);
+			PX4_INFO("value of whoami is: 0x%x", whoami);
 
 			if (testread != POZYX_SUCCESS) {
-				//err(1, "immediate read failed");
+				err(1, "immediate read failed");
 				status.result += 2;
 			}
 			else {
 				if (whoami == POZYX_WHOAMI_EXPECTED){
-					//PX4_INFO("Who Am I Check Successful");
+					PX4_INFO("Who Am I Check Successful");
 				}
 				else{
-					//PX4_INFO("Who Am I Check Failed: 0x%x",whoami);
+					PX4_INFO("Who Am I Check Failed: 0x%x",whoami);
 					status.result += 4;
 				}
 			}
@@ -293,7 +236,7 @@ namespace pozyx
 				//err(1, "Function test failed");
 				status.result += 8;
 			}
-			//PX4_INFO("LED3 turned On... ");
+			PX4_INFO("LED3 turned On... ");
 			sleep(2);
 			funcbuf[0] = 0x40;
 			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
@@ -301,9 +244,9 @@ namespace pozyx
 				//err(1, "Function test failed");
 				status.result += 16;
 			}
-			//PX4_INFO("LED3 turned Off");
+			PX4_INFO("LED3 turned Off");
 
-			//PX4_INFO("Tag %d PASS", bus.index);
+			PX4_INFO("Tag %d PASS", bus.index);
 
 			status.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_tagstatus),status_pub_fd, &status);
@@ -618,7 +561,7 @@ namespace pozyx
 
 			uint8_t num_anchors =12;
 
-			/*
+			
 			//Building 9 channel 2/3
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
@@ -634,9 +577,9 @@ namespace pozyx
 				{0x0305, 1, {10168, -340, 2083}},
 				{0x0306, 1, {3834, -35, 2039}}
 			};
-			*/
-			num_anchors =9;	
 			/*
+			num_anchors =9;	
+			
 			//Pleasant View ch2
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x682E, 1, {-12102, -3313, 1017}},
@@ -651,7 +594,7 @@ namespace pozyx
 			};
 			*/
 
-
+			/*
 			//Pleasant View ch3
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x603C, 1, {589, -3302, 1026}},
@@ -664,7 +607,7 @@ namespace pozyx
 				{0x6853, 1, {-6443, -3309, 1021}},
 				{0x6854, 1, {-15296, 11423, 1175}}
 			};
-			
+			*/
 					
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
@@ -683,18 +626,6 @@ namespace pozyx
 				}
 			}
 
-			/*
-			usleep(100000);
-			if (bus.dev->setPositionAlgorithm(POZYX_POS_ALG_UWB_ONLY, POZYX_2_5D) == POZYX_SUCCESS) {
-				uint8_t algorithm = 0;
-				if (bus.dev->getPositionAlgorithm(&algorithm) == POZYX_SUCCESS){
-					PX4_INFO("Algorithm set to: %x", algorithm);
-				}
-				if (bus.dev->getPositionDimension(&algorithm) == POZYX_SUCCESS){
-					PX4_INFO("Dimension set to: %x", algorithm);
-				}
-			}
-			*/
 			usleep(100000);
 			uint8_t min_anchors = 136; //8 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
@@ -702,22 +633,7 @@ namespace pozyx
 					PX4_INFO("Auto anchor selection set. Minimum %d anchors used.", min_anchors);
 				}		
 			}
-			/*
-			usleep(100000);
-			int32_t z_value = -300;
-			if (bus.dev->regWrite(POZYX_POS_Z, (uint8_t *) &z_value, 4) == POZYX_SUCCESS) {
-				if (bus.dev->regRead(POZYX_POS_Z, (uint8_t *) &z_value, 4) == POZYX_SUCCESS) {
-					PX4_INFO("Z position fixed to %dmm", z_value);
-				}
-			}
-			usleep(100000);
-			if (bus.dev->setUpdateInterval(400) == POZYX_SUCCESS) {				
-				uint16_t interval = 0;
-				if (bus.dev->getUpdateInterval(&interval) == POZYX_SUCCESS) {
-					PX4_INFO("%dms continuous positioning interval set", interval);
-				}
-			}
-			*/
+
 		}
 	}
 
@@ -756,41 +672,10 @@ namespace pozyx
 		}
 	}
 
+
 	void
 	getanchors(enum POZYX_BUS busid, int count)
 	{
-		unsigned startid = 0;
-
-		for (int i=0; i<count; i++){			
-			struct pozyx_bus_option &bus = find_bus(busid, startid);
-			startid = bus.index + 1;
-			uint8_t device_list_size;
-
-			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
-				uint16_t anchors[device_list_size];
-				PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
-				if (bus.dev->getAnchorIds(anchors, device_list_size) == POZYX_SUCCESS) {
-					coordinates_t coordinates;
-					for (int j=0; j<device_list_size; j++){
-						if (bus.dev->getDeviceCoordinates(anchors[j], &coordinates) == POZYX_SUCCESS){
-							PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
-						}
-					}
-				}
-			}
-		}
-	}
-
-
-	void
-	getanchorsorb(enum POZYX_BUS busid, int count)
-	{
-
-
-		/**************************************************************/
-		/*  This function crashes if there are no anchors configured  */
-		/**************************************************************/
-
 		struct pozyx_anchor_s anchor;
 		memset(&anchor, 0, sizeof(anchor));
 		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
@@ -803,25 +688,36 @@ namespace pozyx
 			uint8_t device_list_size;
 
 			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
-				uint16_t anchors[device_list_size];
 				PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
 				anchor.id = bus.index;
 				anchor.anchor_ct = device_list_size;
 				
-				if (bus.dev->getAnchorIds(anchors, device_list_size) == POZYX_SUCCESS) {
-					coordinates_t coordinates;
-					for (int j=0; j<device_list_size; j++){
-						if (bus.dev->getDeviceCoordinates(anchors[j], &coordinates) == POZYX_SUCCESS){
-							PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
-							anchor.anchor_id = anchors[j];
-							anchor.x_pos = coordinates.x;
-							anchor.y_pos = coordinates.y;
-							anchor.z_pos = coordinates.z;
-							
-							anchor.timestamp = hrt_absolute_time();
-							orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);							
+				if (device_list_size > 0) {
+					uint16_t anchors[device_list_size];
+					if (bus.dev->getAnchorIds(anchors, device_list_size) == POZYX_SUCCESS) {
+						coordinates_t coordinates;
+						for (int j=0; j<device_list_size; j++){
+							if (bus.dev->getDeviceCoordinates(anchors[j], &coordinates) == POZYX_SUCCESS) {
+								PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
+								anchor.anchor_id = anchors[j];
+								anchor.x_pos = coordinates.x;
+								anchor.y_pos = coordinates.y;
+								anchor.z_pos = coordinates.z;
+								
+								anchor.timestamp = hrt_absolute_time();
+								orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);							
+							}
 						}
 					}
+				}
+				else{
+					//update with zero count anyway
+					anchor.anchor_id = 0;
+					anchor.x_pos = 0;
+					anchor.y_pos = 0;
+					anchor.z_pos = 0;
+					anchor.timestamp = hrt_absolute_time();
+					orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);	
 				}
 			}
 		}
@@ -1103,37 +999,6 @@ pozyx_main(int argc, char *argv[])
 }
 
 
-int 
-pozyx_pub_main(int argc, char *argv[])
-{
-	warnx("[pozyx_pub] starting\n");
-	thread_running = true;
-
-	while (!thread_should_exit) {
-		pozyx::getpositiontest(POZYX_BUS_ALL, 1, false);
-		usleep(1000000);
-	}
-
-	warnx("[pozyx_pub] exiting.\n");
-	thread_running = false;	
-	return 0;
-}
-
-int 
-pozyx_pub_main_2(int argc, char *argv[])
-{
-	warnx("[pozyx_pub] starting\n");
-	thread_running = true;
-
-	while (!thread_should_exit) {
-		pozyx::getposition(POZYX_BUS_ALL, 2, false);
-		usleep(1000000);
-	}
-
-	warnx("[pozyx_pub] exiting.\n");
-	thread_running = false;	
-	return 0;
-}
 
 int 
 pozyx_commands(int argc, char *argv[])
@@ -1204,10 +1069,10 @@ pozyx_commands(int argc, char *argv[])
 
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETTAGSTATUS) {
-				pozyx::testorb(POZYX_BUS_ALL, 2);
+				pozyx::test(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
-				pozyx::getpositionorb(POZYX_BUS_ALL, 2);
+				pozyx::getposition(POZYX_BUS_ALL, 2, true);
 			}
 			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
 				pozyx::clearanchors(POZYX_BUS_ALL, 2);
@@ -1221,7 +1086,7 @@ pozyx_commands(int argc, char *argv[])
 				pozyx::addanchor(POZYX_BUS_ALL, 2, anchor_id, x, y, z);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETANCHORS) {
-				pozyx::getanchorsorb(POZYX_BUS_ALL, 2);
+				pozyx::getanchors(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETUWB) {
 				pozyx::getuwborb(POZYX_BUS_ALL, 2);

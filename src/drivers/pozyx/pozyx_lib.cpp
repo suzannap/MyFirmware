@@ -1275,7 +1275,7 @@ int PozyxClass::getAnchorIds(uint16_t anchors[],int size, uint16_t remote_id)
   // read out all the devices in the device list
   uint16_t devices[list_size];
   if(remote_id == NULL){
-    status = regFunction(POZYX_DEVICES_GETIDS, NULL, 0, (uint8_t *) devices, list_size * sizeof(uint16_t)); 
+    status = regFunction(POZYX_DEVICES_GETIDS, NULL, 0, (uint8_t *) devices, list_size * 2); 
     usleep(POZYX_DELAY_LOCAL_FUNCTION*1000);
   }
   else{
@@ -1295,15 +1295,16 @@ int PozyxClass::getAnchorIds(uint16_t anchors[],int size, uint16_t remote_id)
       // the third byte will be the special flag describing the device.
       uint8_t data[3] = {0,0,0};
       regFunction(POZYX_DEVICE_GETINFO, (uint8_t*)&devices[i], 2, data, 3);
-      if(data[2] == POZYX_ANCHOR_MODE+1){  
+      if(data[2] == POZYX_ANCHOR_MODE + 1){  
         anchors[j] = devices[i];
         j++;
       }
     }
 
     // ultimately, we didn't find enough Anchors, so we give an error
-    if(j<size)
+    if(j<size){
       return POZYX_FAILURE;
+    }
   }
   return status;
 }
