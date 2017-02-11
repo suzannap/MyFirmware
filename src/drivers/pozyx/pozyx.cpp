@@ -260,11 +260,15 @@ namespace pozyx
 			//Get Tag Index
 			status.id = bus.index;
 
+			//Get Tag ID
+			uint16_t devid = 0;
+			testread = bus.dev->getNetworkId(&devid);
+			status.tag_id = devid;
+
 			//get tag ID/ Whoami
 			uint8_t whoami = 0;
 			testread = bus.dev->regRead(POZYX_WHO_AM_I, &whoami, 1);
 			//PX4_INFO("value of whoami is: 0x%x", whoami);
-			status.tag_id = whoami;
 
 			if (testread != POZYX_SUCCESS) {
 				//err(1, "immediate read failed");
@@ -978,38 +982,13 @@ pozyx_main(int argc, char *argv[])
 			}
 
 			thread_should_exit = false;
-/*
-				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
-												SCHED_DEFAULT, 
-												SCHED_PRIORITY_DEFAULT, 
-												2000, 
-												pozyx_pub_main,
-												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
-			
-			if (count == 1) {
-				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
-												SCHED_DEFAULT, 
-												SCHED_PRIORITY_DEFAULT, 
-												2000, 
-												pozyx_pub_main,
-												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
-			}
-			if (count == 2) {
-				daemon_task = px4_task_spawn_cmd("pozyx_pub_2", 
-												SCHED_DEFAULT, 
-												SCHED_PRIORITY_DEFAULT, 
-												2000, 
-												pozyx_pub_main_2,
-												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
-			}
 
-			*/
-				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
-												SCHED_DEFAULT, 
-												(SCHED_PRIORITY_MAX -10), 
-												5400, 
-												pozyx_commands,
-												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
+			daemon_task = px4_task_spawn_cmd("pozyx_commands", 
+											SCHED_DEFAULT, 
+											(SCHED_PRIORITY_MAX -10), 
+											5000, 
+											pozyx_commands,
+											(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 
 		}
 		exit(0);
@@ -1194,24 +1173,6 @@ pozyx_commands(int argc, char *argv[])
 
 		/* timed out - periodic check for thread_should_exit, etc. */
 		if (pret == 0) {
-			/* trigger a param autosave if required 
-			if (need_param_autosave) {
-				if (need_param_autosave_timeout > 0 && hrt_elapsed_time(&need_param_autosave_timeout) > 200000ULL) {
-					int ret = param_save_default();
-
-					if (ret != OK) {
-						mavlink_log_critical(&mavlink_log_pub, "settings auto save error");
-					} else {
-						PX4_DEBUG("commander: settings saved.");
-					}
-
-					need_param_autosave = false;
-					need_param_autosave_timeout = 0;
-				} else {
-					need_param_autosave_timeout = hrt_absolute_time();
-				}
-			}
-			*/
 		} else if (pret < 0) {
 		/* this is undesirable but not much we can do - might want to flag unhappy status */
 			warn("commander: poll error %d, %d", pret, errno);
