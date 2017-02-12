@@ -299,7 +299,10 @@ namespace pozyx
 			//PX4_INFO("LED3 turned Off");
 
 			//PX4_INFO("Tag %d PASS", bus.index);
+
+			status.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_tagstatus),status_pub_fd, &status);
+
 
 		}
 	}
@@ -569,6 +572,7 @@ namespace pozyx
 			position.x_pos /= (validcount*1000);
 			position.y_pos /= (-validcount*1000);
 			position.z_pos /= (-count*1000);
+			position.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_position),position_pub_fd, &position);
 		}
 	}
@@ -741,6 +745,7 @@ namespace pozyx
 							anchor.y_pos = coordinates.y;
 							anchor.z_pos = coordinates.z;
 							
+							anchor.timestamp = hrt_absolute_time();
 							orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);							
 						}
 					}
@@ -838,6 +843,7 @@ namespace pozyx
 				uwb.plen = mysettings.plen;
 				uwb.gain_db = (double)mysettings.gain_db;
 
+				uwb.timestamp = hrt_absolute_time();
 				orb_publish(ORB_ID(pozyx_uwb),uwb_pub_fd, &uwb);							
 			}
 		}
@@ -950,7 +956,8 @@ pozyx_main(int argc, char *argv[])
 
 	//test driver/device
 	if (!strcmp(verb, "test")) {
-		pozyx::test(busid, count);
+		//pozyx::test(busid, count);
+		pozyx::testorb(busid, count);
 		exit(0);
 	}
 	//configure pozyx
@@ -961,7 +968,8 @@ pozyx_main(int argc, char *argv[])
 
 	//fetch positions
 	if (!strcmp(verb, "getposition")) {
-		pozyx::getposition(busid, count, true);
+		//pozyx::getposition(busid, count, true);
+		pozyx::getpositionorb(busid, count);
 		exit(0);
 	}
 
@@ -1002,7 +1010,7 @@ pozyx_main(int argc, char *argv[])
 	}
 	//get anchors	
 	if (!strcmp(verb, "getanchors")) {
-		pozyx::getanchors(busid, count);
+		pozyx::getanchorsorb(busid, count);
 		exit(0);
 	}
 
@@ -1027,7 +1035,7 @@ pozyx_main(int argc, char *argv[])
 	}
 	//get UWB parameters	
 	if (!strcmp(verb, "getuwb")) {
-		pozyx::getuwb(busid, count);
+		pozyx::getuwborb(busid, count);
 		exit(0);
 	}
 	//reset to factory settings

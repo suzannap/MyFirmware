@@ -98,11 +98,6 @@
 #include <uORB/topics/pozyx_position.h>
 #include <uORB/topics/pozyx_anchor.h>
 #include <uORB/topics/pozyx_uwb.h>
-#include <v1.0/waterbees_messages/mavlink_msg_pozyx_status.h>
-#include <v1.0/waterbees_messages/mavlink_msg_pozyx_tagstatus.h>
-#include <v1.0/waterbees_messages/mavlink_msg_pozyx_position.h>
-#include <v1.0/waterbees_messages/mavlink_msg_pozyx_anchor.h>
-#include <v1.0/waterbees_messages/mavlink_msg_pozyx_uwb.h>
 
 
 static uint16_t cm_uint16_from_m_float(float m);
@@ -1944,6 +1939,7 @@ protected:
 
 				msg.q[0] = 1.0f;
 				msg.q[1] = 0.0f;
+
 				msg.q[2] = 0.0f;
 				msg.q[3] = 0.0f;
 
@@ -3724,11 +3720,11 @@ protected:
 			msg.tag_id = _pozyx_tagstatus.tag_id;
 			msg.result = _pozyx_tagstatus.result;
 
+			PX4_INFO("Tag %d Tag ID: %d Result: %d", msg.id, msg.tag_id, msg.result);			
 			mavlink_msg_pozyx_tagstatus_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}
 };
-
 
 class MavlinkStreamPozyxPosition : public MavlinkStream
 {
@@ -3796,6 +3792,7 @@ protected:
 			msg.xz_cov = _pozyx_position.xz_cov;
 			msg.yz_cov = _pozyx_position.yz_cov;
 
+			PX4_INFO("Current position tag %d: %d   %d   %d", _pozyx_position.id, _pozyx_position.x_pos, _pozyx_position.y_pos, _pozyx_position.z_pos);
 			mavlink_msg_pozyx_position_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}
@@ -3863,6 +3860,8 @@ protected:
 			msg.y_pos = _pozyx_anchor.y_pos;
 			msg.z_pos = _pozyx_anchor.z_pos;
 
+			PX4_INFO("ID: %d Count: %d Anchor 0x%x at (%d, %d, %d)", _pozyx_anchor.id, _pozyx_anchor.anchor_ct, _pozyx_anchor.anchor_id, _pozyx_anchor.x_pos, _pozyx_anchor.y_pos, _pozyx_anchor.z_pos);
+
 			mavlink_msg_pozyx_anchor_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}
@@ -3928,6 +3927,8 @@ protected:
 			msg.prf = _pozyx_uwb.prf;
 			msg.plen = _pozyx_uwb.plen;
 			msg.gain_db = _pozyx_uwb.gain_db;
+
+			PX4_INFO("UWB settings on tag %d: bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", _pozyx_uwb.id, _pozyx_uwb.bitrate, _pozyx_uwb.prf, _pozyx_uwb.plen, (double)_pozyx_uwb.gain_db);
 
 			mavlink_msg_pozyx_uwb_send_struct(_mavlink->get_channel(), &msg);
 		}
