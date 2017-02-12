@@ -3655,7 +3655,7 @@ protected:
 			mavlink_pozyx_status_t msg;
 
 			msg.status = _pozyx_status.status;
-			PX4_INFO("Daemon Status: %d", msg.status);			
+			//PX4_INFO("Daemon Status: %d", msg.status);			
 			mavlink_msg_pozyx_status_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}
@@ -3720,7 +3720,7 @@ protected:
 			msg.tag_id = _pozyx_tagstatus.tag_id;
 			msg.result = _pozyx_tagstatus.result;
 
-			PX4_INFO("Tag %d Tag ID: %d Result: %d", msg.id, msg.tag_id, msg.result);			
+			//PX4_INFO("Tag %d Tag ID: %d Result: %d", msg.id, msg.tag_id, msg.result);			
 			mavlink_msg_pozyx_tagstatus_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}
@@ -3792,7 +3792,7 @@ protected:
 			msg.xz_cov = _pozyx_position.xz_cov;
 			msg.yz_cov = _pozyx_position.yz_cov;
 
-			PX4_INFO("Current position tag %d: %d   %d   %d", _pozyx_position.id, _pozyx_position.x_pos, _pozyx_position.y_pos, _pozyx_position.z_pos);
+			//PX4_INFO("Current position tag %d: %d   %d   %d", _pozyx_position.id, _pozyx_position.x_pos, _pozyx_position.y_pos, _pozyx_position.z_pos);
 			mavlink_msg_pozyx_position_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}
@@ -3860,7 +3860,7 @@ protected:
 			msg.y_pos = _pozyx_anchor.y_pos;
 			msg.z_pos = _pozyx_anchor.z_pos;
 
-			PX4_INFO("ID: %d Count: %d Anchor 0x%x at (%d, %d, %d)", _pozyx_anchor.id, _pozyx_anchor.anchor_ct, _pozyx_anchor.anchor_id, _pozyx_anchor.x_pos, _pozyx_anchor.y_pos, _pozyx_anchor.z_pos);
+			//PX4_INFO("ID: %d Count: %d Anchor 0x%x at (%d, %d, %d)", _pozyx_anchor.id, _pozyx_anchor.anchor_ct, _pozyx_anchor.anchor_id, _pozyx_anchor.x_pos, _pozyx_anchor.y_pos, _pozyx_anchor.z_pos);
 
 			mavlink_msg_pozyx_anchor_send_struct(_mavlink->get_channel(), &msg);
 		}
@@ -3928,7 +3928,7 @@ protected:
 			msg.plen = _pozyx_uwb.plen;
 			msg.gain_db = _pozyx_uwb.gain_db;
 
-			PX4_INFO("UWB settings on tag %d: bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", _pozyx_uwb.id, _pozyx_uwb.bitrate, _pozyx_uwb.prf, _pozyx_uwb.plen, (double)_pozyx_uwb.gain_db);
+			//PX4_INFO("UWB settings on tag %d: bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", _pozyx_uwb.id, _pozyx_uwb.bitrate, _pozyx_uwb.prf, _pozyx_uwb.plen, (double)_pozyx_uwb.gain_db);
 
 			mavlink_msg_pozyx_uwb_send_struct(_mavlink->get_channel(), &msg);
 		}

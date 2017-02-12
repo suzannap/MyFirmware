@@ -29,18 +29,18 @@ param set ATT_W_GYRO_BIAS 0.1
 param set ATT_W_MAG 0
 
 param set LPE_ACC_XY 0.05
-param set LPE_PN_B 0.0002
+param set LPE_GPS_ON 0
+param set LPE_PN_B 0.001
 param set LPE_PN_P 0.15
 param set LPE_PN_T 0.1
 param set LPE_PN_V 0.1
 param set LPE_VIC_P 0.15
+param set LPE_VIS_ON 0
 
 param set MC_PITCH_P 0
 param set MC_PITCHRATE_P 0.6
-param set MC_PITCH_TC 0.25
 param set MC_ROLL_P 0
 param set MC_ROLLRATE_P 0.6
-param set MC_ROLL_TC 0.25
 param set MC_YAWRATE_D 0.1
 param set MC_YAWRATE_FF 0.1
 param set MC_YAWRATE_I 0
@@ -72,6 +72,7 @@ param set SYS_MC_EST_GROUP 0
 param set SYS_COMPANION 57600
 
 param set COM_RC_IN_MODE 1
+param set COM_RC_LOSS_T 2
 param set COM_ARM_IMU_ACC 2
 
 param set RC_MAP_FLTMODE 8
@@ -90,10 +91,14 @@ param set CBRK_IO_SAFETY 22027
 param set CBRK_USB_CHK 197848
 
 #battery settings
+param set BAT_A_PER_V 13.033
+param set BAT_CAPACITY 20000
+param set BAT_CNT_V_CURR 0.00080566
+param set BAT_CND_V_VOLT 0.00080566
 param set BAT_N_CELLS 4
-param set BAT_V_CHARGED 3.5
-param set BAT_V_EMPTY 2.65
-param set BAT_V_DIV 12.27
+param set BAT_V_CHARGED 3.35
+param set BAT_V_EMPTY 2.5
+param set BAT_V_DIV 10.16636
 
 #set mixers
 set MIXER waterbee

@@ -1186,7 +1186,13 @@ bool handle_command(struct vehicle_status_s *status_local, const struct safety_s
 	default:
 		/* Warn about unsupported commands, this makes sense because only commands
 		 * to this component ID (or all) are passed by mavlink. */
-		answer_command(*cmd, vehicle_command_s::VEHICLE_CMD_RESULT_UNSUPPORTED, *command_ack_pub, *command_ack);
+		if (cmd->command >= 31010 && cmd->command <=31050){
+			//custom pozyx commands
+			cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
+		}
+		else {
+			answer_command(*cmd, vehicle_command_s::VEHICLE_CMD_RESULT_UNSUPPORTED, *command_ack_pub, *command_ack);
+		}
 		break;
 	}
 
