@@ -1960,11 +1960,11 @@ Mavlink::task_main(int argc, char *argv[])
 	LL_APPEND(_streams, _mission_manager);
 
 	/* Configure Custom Pozyx Streams */
-	configure_stream("POZYX_STATUS", 100.0f);
-	configure_stream("POZYX_TAGSTATUS", 100.0f);
-	configure_stream("POZYX_POSITION", 100.0f);
-	configure_stream("POZYX_ANCHOR", 100.0f);
-	configure_stream("POZYX_UWB", 100.0f);
+	configure_stream("POZYX_STATUS", 10.0f);
+	configure_stream("POZYX_TAGSTATUS", 10.0f);
+	configure_stream("POZYX_POSITION", 10.0f);
+	configure_stream("POZYX_ANCHOR", 10.0f);
+	configure_stream("POZYX_UWB", 10.0f);
 	configure_stream("ATT_POS_MOCAP", 100.0f);
 
 

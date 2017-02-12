@@ -13,44 +13,43 @@ sh /etc/init.d/rc.mc_defaults
 #set VEHICLE_TYPE 11
 pozyx start
 
-if [ $AUTOCNF == yes ]
-then
-	#each vehicle needs unique sysID
-	param set MAV_SYS_ID 10
-fi
+param set MAV_SYS_ID 10
 param set MAV_BROADCAST 1
 
-param set PWM_DISARMED 0
-param set PWM_MIN 1064
-param set PWM_MAX 1864
-param set PWM_RATE 400
-param set COM_RC_IN_MODE 1
 
+param set ATT_ACC_COMP 0
+param set ATT_BIAS_MAX 0.05
 param set ATT_EXT_HDG_M 2
+param set ATT_MAG_DECL 0
+param set ATT_MAG_DECL_A 1
+param set ATT_VIBE_THRESH 0.2
+param set ATT_W_ACC 0.1
+param set ATT_W_EXT_HDG 0.02
+param set ATT_W_GYRO_BIAS 0.1
+param set ATT_W_MAG 0
+
+param set LPE_ACC_XY 0.05
+param set LPE_GPS_ON 0
+param set LPE_PN_B 0.001
+param set LPE_PN_P 0.1
+param set LPE_PN_T 0.1
+param set LPE_PN_V 0.1
+param set LPE_VIC_P 0.15
+param set LPE_VIS_ON 0
+
+param set MC_PITCH_P 0
+param set MC_ROLL_P 0
+
+param set SENS_BOARD_ROT 6
+
 param set INAV_DISAB_MOCAP 0
 
 param set SYS_MC_EST_GROUP 0
-
-#EKF2 setup
-if [ $SYS_MC_EST_GROUP == 2 ]
-then
-	param set EKF2_AID_MASK 24
-	param set EKF2_USE_MOCAP 1
-
-	#position of Pixhawk in frame
-	param set EKF2_IMU_POS_X 0
-	param set EKF2_IMU_POS_Y 0
-	param set EKF2_IMU_POS_Z 0
-
-	#position of Pozyx in frame
-	param set EKF2_EV_POS_X 0
-	param set EKF2_EV_POS_Y 0
-	param set EKF2_EV_POS_Z 0
-fi
-
 param set SYS_COMPANION 57600
 
 param set COM_RC_IN_MODE 1
+param set COM_RC_LOSS_T 2
+param set COM_ARM_IMU_ACC 2
 
 param set RC_MAP_FLTMODE 8
 param set COM_FLTMODE1 7
@@ -67,36 +66,28 @@ param set RC_KILLSWITCH_TH -0.9
 param set CBRK_IO_SAFETY 22027
 param set CBRK_USB_CHK 197848
 
-param set COM_ARM_IMU_ACC 2
+#battery settings
+param set BAT_A_PER_V 13.033
+param set BAT_CAPACITY 20000
+param set BAT_CNT_V_CURR 0.00080566
+param set BAT_CND_V_VOLT 0.00080566
+param set BAT_N_CELLS 4
+param set BAT_V_CHARGED 3.35
+param set BAT_V_EMPTY 2.5
+param set BAT_V_DIV 10.16636
 
-# This is the gimbal pass mixer
+#set mixers
+set MIXER waterbee_v2
+param set PWM_DISARMED 0
+param set PWM_MIN 1064
+param set PWM_MAX 1864
+param set PWM_RATE 400
+
 set MIXER_AUX pass
 set PWM_AUX_RATE 50
 set PWM_AUX_OUT 1234
-param set PWM_AUX_DISARMED 0
+param set PWM_AUX_DISARMED 1000
 param set PWM_AUX_MIN 1000
 param set PWM_AUX_MAX 2000
-param set RC_MAP_AUX1 6
-
-#skip calibration
-#param set CAL_ACC0_ID 1441792
-#param set CAL_ACC1_ID 1114914
-#param set param CAL_ACC_PRIME 1441792
-#param set CAL_GYRO0_ID 2359296
-#param set CAL_GYRO1_ID 2229282
-#param set CAL_GYRO_PRIME 2359296
-#param set CAL_MAG0_ID 262144
-#param set CAL_MAG1_ID 131874
-#param set CAL_MAG2_ID 262144
-#param set CAL_MAG_PRIME 262144
-
-#battery settings
-param set BAT_N_CELLS 4
-param set BAT_V_CHARGED 3.5
-param set BAT_V_EMPTY 2.65
-
-
-
-#set mixer
-set MIXER waterbee_v2
-
+param set RC_MAP_AUX1 5
+param set RC_MAP_AUX2 6

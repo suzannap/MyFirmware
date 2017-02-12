@@ -73,7 +73,7 @@ void BlockLocalPositionEstimator::baroCorrect()
 	// fault detection
 	float beta = (r.transpose() * (S_I * r))(0, 0);
 
-	if (beta > 10000* BETA_TABLE[n_y_baro]) { //we don't care about barometer faulting
+	if (false) {//beta > 100000* BETA_TABLE[n_y_baro]) { //we don't care about barometer faulting
 		if (_baroFault < FAULT_MINOR) {
 			if (beta > 2.0f * BETA_TABLE[n_y_baro]) {
 				mavlink_log_critical(&mavlink_log_pub, "[lpe] baro fault, r %5.2f m, beta %5.2f",

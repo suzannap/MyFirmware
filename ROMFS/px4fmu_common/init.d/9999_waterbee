@@ -24,45 +24,21 @@ param set ATT_MAG_DECL 0
 param set ATT_MAG_DECL_A 1
 param set ATT_VIBE_THRESH 0.2
 param set ATT_W_ACC 0.1
-param set ATT_W_EXT_HDG 0.1
+param set ATT_W_EXT_HDG 0.02
 param set ATT_W_GYRO_BIAS 0.1
 param set ATT_W_MAG 0
 
 param set LPE_ACC_XY 0.05
 param set LPE_GPS_ON 0
 param set LPE_PN_B 0.001
-param set LPE_PN_P 0.15
+param set LPE_PN_P 0.1
 param set LPE_PN_T 0.1
 param set LPE_PN_V 0.1
 param set LPE_VIC_P 0.15
 param set LPE_VIS_ON 0
 
 param set MC_PITCH_P 0
-param set MC_PITCHRATE_P 0.6
 param set MC_ROLL_P 0
-param set MC_ROLLRATE_P 0.6
-param set MC_YAWRATE_D 0.1
-param set MC_YAWRATE_FF 0.1
-param set MC_YAWRATE_I 0
-param set MC_YAWRATE_MAX 45
-param set MC_YAWRATE_P 0
-param set MC_YAW_FF 0.05
-param set MC_YAW_P 2.8
-
-param set MPC_ACC_HOR_MAX 15
-param set MPC_HOLD_MAX_XY 0
-param set MPC_MAN_P_MAX 90
-param set MPC_MAN_R_MAX 90
-param set MPC_TILTMAX_AIR 90
-param set MPC_TILTMAX_LND 90
-param set MPC_VELD_LP 3
-param set MPC_XY_CRUISE 0.3
-param set MPC_XY_FF 0.5
-param set MPC_XY_P 5
-param set MPC_XY_VEL_D 0.1
-param set MPC_XY_VEL_I 0
-param set MPC_XY_VEL_MAX 0.9
-param set MPC_XY_VEL_P 0.15
 
 param set SENS_BOARD_ROT 6
 

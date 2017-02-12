@@ -389,9 +389,9 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
+			/*
 			uint8_t num_anchors =12;
 
-			
 			//Building 9 channel 2/3
 			device_coordinates_t anchorlist[num_anchors] = {
 				{0x0201, 1, {-313, -7254, 1804}},
@@ -424,6 +424,7 @@ namespace pozyx
 					}
 				}
 			}
+			*/
 
 			usleep(100000);
 			uint8_t min_anchors = 136; //8 && auto selection bit
@@ -904,7 +905,7 @@ pozyx_commands(int argc, char *argv[])
 				pozyx::test(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
-				pozyx::getposition(POZYX_BUS_ALL, 2, true);
+				pozyx::getposition(POZYX_BUS_ALL, 2, false);
 			}
 			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
 				pozyx::clearanchors(POZYX_BUS_ALL, 2);
