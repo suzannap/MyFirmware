@@ -9,3 +9,13 @@ int16 z_cov		#z covariance
 int16 xy_cov		#xy covariance
 int16 xz_cov		#xz covariance
 int16 yz_cov		#yz covariance
+uint16 id_2			#tag index
+int32 x_pos_2		#x position
+int32 y_pos_2		#y position
+int32 z_pos_2		#z position
+int16 x_cov_2		#x covariance
+int16 y_cov_2		#y covariance
+int16 z_cov_2		#z covariance
+int16 xy_cov_2		#xy covariance
+int16 xz_cov_2		#xz covariance
+int16 yz_cov_2		#yz covariance

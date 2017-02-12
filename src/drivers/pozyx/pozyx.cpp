@@ -192,22 +192,42 @@ namespace pozyx
 
 			const char *path = bus.devpath;
 			int fd = px4_open(path, O_RDONLY);
-			status.result = 0;
+			if (i==0){	
+				status.result = 0;
+			}
+			else {
+				status.result_2 = 0;
+			}
 
 
 			if (fd < 0) {
 				err(1, "%s open failed (try 'pozyx start')", path);
-				status.result += 1;			
+				if (i==0){	
+					status.result += 1;
+				}
+				else {
+					status.result_2 +=1;
+				}
 			}
 		
 			//Get Tag Index
-			status.id = bus.index;
+			if (i==0){
+				status.id = bus.index;
+			}
+			else {
+				status.id_2 = bus.index;
+			}
 
 			//Get Tag ID
 			uint16_t devid = 0;
 			testread = bus.dev->getNetworkId(&devid);
 			PX4_INFO("Device ID is: 0x%x", devid);
-			status.tag_id = devid;
+			if (i==0){
+				status.tag_id = devid;
+			}
+			else {
+				status.tag_id_2 = devid;
+			}
 
 			//check Whoami
 			uint8_t whoami = 0;
@@ -216,7 +236,12 @@ namespace pozyx
 
 			if (testread != POZYX_SUCCESS) {
 				err(1, "immediate read failed");
-				status.result += 2;
+				if (i==0){	
+					status.result += 2;
+				}
+				else {
+					status.result_2 +=2;
+				}
 			}
 			else {
 				if (whoami == POZYX_WHOAMI_EXPECTED){
@@ -224,10 +249,27 @@ namespace pozyx
 				}
 				else{
 					PX4_INFO("Who Am I Check Failed: 0x%x",whoami);
+				}
+				if (i==0){	
 					status.result += 4;
+				}
+				else {
+					status.result_2 +=4;
 				}
 			}
 
+			uint8_t err_code = 0;
+			if (bus.dev->getErrorCode(&err_code) == POZYX_SUCCESS) {
+				if (i==0){	
+					status.error_code = err_code;
+				}
+				else {
+					status.error_code_2 = err_code;
+				}
+
+			}
+
+/*
 			//test a function call by blinking LED3
 			uint8_t funcbuf[100];
 			funcbuf[0] = 0x44;
@@ -235,7 +277,12 @@ namespace pozyx
 			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
 			if (funcbuf[0] != 1) {
 				//err(1, "Function test failed");
-				status.result += 8;
+				if (i==0){	
+					status.result += 8;
+				}
+				else {
+					status.result_2 +=8;
+				}
 			}
 			PX4_INFO("LED3 turned On... ");
 			sleep(2);
@@ -243,9 +290,15 @@ namespace pozyx
 			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
 			if (funcbuf[0] != 1) {
 				//err(1, "Function test failed");
-				status.result += 16;
+				if (i==0){	
+					status.result += 16;
+				}
+				else {
+					status.result_2 +=16;
+				}
 			}
 			PX4_INFO("LED3 turned Off");
+*/
 
 			PX4_INFO("Tag %d PASS", bus.index);
 
@@ -280,38 +333,48 @@ namespace pozyx
 		int totalerror = 0;
 
 
-		position.x_pos = 0;
-		position.y_pos = 0;
-		position.z_pos = -5;
+		pos.x = 0;
+		pos.y = 0;
+		pos.z = -5;
 
 		for (int i=0; i<count; i++){
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
-			position.id = bus.index;
 
 			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, tag_height)){
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 				}
-				position.x_pos = poz_coordinates[i].x;
-				position.y_pos = poz_coordinates[i].y;
-				position.z_pos = poz_coordinates[i].z;
 
 				pos_error_t poz_error;
 				if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					position.x_cov = poz_error.x;
-					position.y_cov = poz_error.y;
-					position.z_cov = poz_error.z;
-					position.xy_cov = poz_error.xy;
-					position.xz_cov = poz_error.xz;
-					position.yz_cov = poz_error.yz;
-
-					position.timestamp = hrt_absolute_time();
-					orb_publish(ORB_ID(pozyx_position),position_pub_fd, &position);
-
+					if (i==0) {
+						position.id = bus.index;
+						position.x_pos = poz_coordinates[i].x;
+						position.y_pos = poz_coordinates[i].y;
+						position.z_pos = poz_coordinates[i].z;
+						position.x_cov = poz_error.x;
+						position.y_cov = poz_error.y;
+						position.z_cov = poz_error.z;
+						position.xy_cov = poz_error.xy;
+						position.xz_cov = poz_error.xz;
+						position.yz_cov = poz_error.yz;
+					}
+					else {
+						position.id_2 = bus.index;
+						position.x_pos_2 = poz_coordinates[i].x;
+						position.y_pos_2 = poz_coordinates[i].y;
+						position.z_pos_2 = poz_coordinates[i].z;
+						position.x_cov_2 = poz_error.x;
+						position.y_cov_2 = poz_error.y;
+						position.z_cov_2 = poz_error.z;
+						position.xy_cov_2 = poz_error.xy;
+						position.xz_cov_2 = poz_error.xz;
+						position.yz_cov_2 = poz_error.yz;						
+					}
 
 					totalerror = abs(poz_error.xy);
 					if(totalerror > err_thresholds[0]) {
@@ -366,6 +429,11 @@ namespace pozyx
 			}
 		}	
 
+		//publish raw pozyx values regardless of validity
+		position.timestamp = hrt_absolute_time();
+		orb_publish(ORB_ID(pozyx_position),position_pub_fd, &position);
+
+		//if we have valid measurements, publish to att-pos-mocap for positioning
 		if (validcount == count) {
 			pos.x /= (validcount*1000);
 			pos.y /= (-validcount*1000);
