@@ -1,5 +1,6 @@
 #Returns the current UWB settings
 uint8 id		#tag index
+uint8 channel	#Communication Channel
 uint8 bitrate		#Communication Bitrate
 uint8 prf		#Pulse Repetition Freq
 uint8 plen		#Preamble Length

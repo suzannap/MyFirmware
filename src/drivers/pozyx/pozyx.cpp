@@ -95,8 +95,7 @@ namespace pozyx
 	void	getanchors(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void	getuwb(enum POZYX_BUS busid, int count);
-	void	getuwborb(enum POZYX_BUS busid, int count);
-	void	setuwb(enum POZYX_BUS busid, int count, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db);
+	void	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db);
 	void	resettofactory(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void 	setthresholds(int cov_thresh, int u_dist_thresh, int l_dist_thresh);
@@ -578,7 +577,7 @@ namespace pozyx
 
 
 	void
-	setuwb(enum POZYX_BUS busid, int count, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db)
+	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db)
 	{
 		unsigned startid = 0;
 
@@ -586,7 +585,7 @@ namespace pozyx
 		uint8_t prfs[2] = {1, 2};
 		uint8_t plens[8] = {0x0C, 0x28, 0x18, 0x08, 0x34, 0x24, 0x14, 0x04};
 		UWB_settings_t mysettings;
-		mysettings.channel = 5;
+		mysettings.channel = channel;
 		mysettings.bitrate = bitrates[bitrate];
 		mysettings.prf = prfs[prf];
 		mysettings.plen = plens[plen];
@@ -624,24 +623,9 @@ namespace pozyx
 		}
 	}
 
+
 	void
 	getuwb(enum POZYX_BUS busid, int count)
-	{
-		unsigned startid = 0;
-		UWB_settings_t mysettings;
-
-		for (int i=0; i<count; i++){			
-			struct pozyx_bus_option &bus = find_bus(busid, startid);
-			startid = bus.index + 1;
-
-			if (bus.dev->getUWBSettings(&mysettings) == POZYX_SUCCESS){
-				PX4_INFO("UWB settings on tag %d: channel %d, bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", bus.index, mysettings.channel, mysettings.bitrate, mysettings.prf, mysettings.plen, (double)mysettings.gain_db);
-			}
-		}
-	}
-
-	void
-	getuwborb(enum POZYX_BUS busid, int count)
 	{
 
 		/* Publish UWB Topic */
@@ -659,7 +643,7 @@ namespace pozyx
 			if (bus.dev->getUWBSettings(&mysettings) == POZYX_SUCCESS){
 				PX4_INFO("UWB settings on tag %d: channel %d, bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", bus.index, mysettings.channel, mysettings.bitrate, mysettings.prf, mysettings.plen, (double)mysettings.gain_db);
 				uwb.id = bus.index;
-				//uwb.channel = mysettings.channel;
+				uwb.channel = mysettings.channel;
 				uwb.bitrate = mysettings.bitrate;
 				uwb.prf = mysettings.prf;
 				uwb.plen = mysettings.plen;
@@ -820,11 +804,12 @@ pozyx_main(int argc, char *argv[])
 	//set UWB parameters
 	if (!strcmp(verb, "setuwb")) {
 		if (argc == 6) {
+			uint8_t channel = atoi(argv[1]);
 			uint8_t bitrate = atoi(argv[2]);
 			uint8_t prf = atoi(argv[3]);
 			uint8_t plen = atoi(argv[4]);
 			float gain_db = atoi(argv[5])/2.0;
-			pozyx::setuwb(busid, count, bitrate, prf, plen, gain_db);
+			pozyx::setuwb(busid, count, channel, bitrate, prf, plen, gain_db);
 		}
 		else {			
 			PX4_INFO("wrong number of arguments to configure UWB settings. Requires bitrate, prf, plen, gain_db");
@@ -936,15 +921,15 @@ pozyx_commands(int argc, char *argv[])
 				pozyx::getanchors(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETUWB) {
-				pozyx::getuwborb(POZYX_BUS_ALL, 2);
+				pozyx::getuwb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_SETUWB) {
-				//uint8_t id = static_cast<int>(cmd.param1);
+				uint8_t channel = static_cast<int>(cmd.param1);
 				uint8_t bitrate = static_cast<int>(cmd.param2);
 				uint8_t prf = static_cast<int>(cmd.param3);
 				uint8_t plen = static_cast<int>(cmd.param4);
 				float gain_db = cmd.param5/2.0;
-				pozyx::setuwb(POZYX_BUS_ALL, 2, bitrate, prf, plen, gain_db);
+				pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db);
 			}
 			if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
 				pozyx::resettofactory(POZYX_BUS_ALL, 2);

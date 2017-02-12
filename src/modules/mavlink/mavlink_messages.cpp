@@ -3923,6 +3923,7 @@ protected:
 			mavlink_pozyx_uwb_t msg;
 
 			msg.id = _pozyx_uwb.id;
+			msg.channel = _pozyx_uwb.channel;
 			msg.bitrate = _pozyx_uwb.bitrate;
 			msg.prf = _pozyx_uwb.prf;
 			msg.plen = _pozyx_uwb.plen;
