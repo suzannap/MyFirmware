@@ -837,7 +837,7 @@ namespace pozyx
 			if (bus.dev->getUWBSettings(&mysettings) == POZYX_SUCCESS){
 				//PX4_INFO("UWB settings on tag %d: channel %d, bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", bus.index, mysettings.channel, mysettings.bitrate, mysettings.prf, mysettings.plen, (double)mysettings.gain_db);
 				uwb.id = bus.index;
-				//	mysettings.channel;
+				//uwb.channel = mysettings.channel;
 				uwb.bitrate = mysettings.bitrate;
 				uwb.prf = mysettings.prf;
 				uwb.plen = mysettings.plen;
@@ -956,8 +956,7 @@ pozyx_main(int argc, char *argv[])
 
 	//test driver/device
 	if (!strcmp(verb, "test")) {
-		//pozyx::test(busid, count);
-		pozyx::testorb(busid, count);
+		pozyx::test(busid, count);
 		exit(0);
 	}
 	//configure pozyx
@@ -968,8 +967,7 @@ pozyx_main(int argc, char *argv[])
 
 	//fetch positions
 	if (!strcmp(verb, "getposition")) {
-		//pozyx::getposition(busid, count, true);
-		pozyx::getpositionorb(busid, count);
+		pozyx::getposition(busid, count, true);
 		exit(0);
 	}
 
@@ -1010,7 +1008,7 @@ pozyx_main(int argc, char *argv[])
 	}
 	//get anchors	
 	if (!strcmp(verb, "getanchors")) {
-		pozyx::getanchorsorb(busid, count);
+		pozyx::getanchors(busid, count);
 		exit(0);
 	}
 
@@ -1035,7 +1033,7 @@ pozyx_main(int argc, char *argv[])
 	}
 	//get UWB parameters	
 	if (!strcmp(verb, "getuwb")) {
-		pozyx::getuwborb(busid, count);
+		pozyx::getuwb(busid, count);
 		exit(0);
 	}
 	//reset to factory settings
@@ -1092,34 +1090,6 @@ pozyx_commands(int argc, char *argv[])
 	int cmd_sub = orb_subscribe(ORB_ID(vehicle_command));
 	struct vehicle_command_s cmd;
 	memset(&cmd, 0, sizeof(cmd));
-
-	/* Publish Status Topic */
-	/*
-	struct pozyx_status_s status;
-	memset(&status, 0, sizeof(status));
-	orb_advert_t status_pub_fd = orb_advertise(ORB_ID(pozyx_status), &status);
-	*/
-
-	/* Publish Position Topic */
-	/*
-	struct pozyx_position_s position;
-	memset(&position, 0, sizeof(position));
-	orb_advert_t position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
-	*/
-
-	/* Publish Anchor Topic */
-	/*
-	struct pozyx_anchor_s anchor;
-	memset(&anchor, 0, sizeof(anchor));
-	orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
-	*/
-
-	/* Publish UWB Topic */
-	/*
-	struct pozyx_uwb_s uwb;
-	memset(&uwb, 0, sizeof(uwb));
-	orb_advert_t uwb_pub_fd = orb_advertise(ORB_ID(pozyx_uwb), &uwb);
-	*/
 
 	/* command ack 
 	orb_advert_t command_ack_pub = nullptr;
