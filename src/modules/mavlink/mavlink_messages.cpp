@@ -3655,7 +3655,7 @@ protected:
 			mavlink_pozyx_status_t msg;
 
 			msg.status = _pozyx_status.status;
-
+			PX4_INFO("Daemon Status: %d", msg.status);			
 			mavlink_msg_pozyx_status_send_struct(_mavlink->get_channel(), &msg);
 		}
 	}

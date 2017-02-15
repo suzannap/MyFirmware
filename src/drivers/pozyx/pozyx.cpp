@@ -718,6 +718,11 @@ namespace pozyx
 	getanchorsorb(enum POZYX_BUS busid, int count)
 	{
 
+
+		/**************************************************************/
+		/*  This function crashes if there are no anchors configured  */
+		/**************************************************************/
+
 		struct pozyx_anchor_s anchor;
 		memset(&anchor, 0, sizeof(anchor));
 		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
@@ -731,7 +736,7 @@ namespace pozyx
 
 			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
 				uint16_t anchors[device_list_size];
-				//PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
+				PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
 				anchor.id = bus.index;
 				anchor.anchor_ct = device_list_size;
 				
@@ -739,7 +744,7 @@ namespace pozyx
 					coordinates_t coordinates;
 					for (int j=0; j<device_list_size; j++){
 						if (bus.dev->getDeviceCoordinates(anchors[j], &coordinates) == POZYX_SUCCESS){
-							//PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
+							PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
 							anchor.anchor_id = anchors[j];
 							anchor.x_pos = coordinates.x;
 							anchor.y_pos = coordinates.y;
@@ -835,7 +840,7 @@ namespace pozyx
 			startid = bus.index + 1;
 
 			if (bus.dev->getUWBSettings(&mysettings) == POZYX_SUCCESS){
-				//PX4_INFO("UWB settings on tag %d: channel %d, bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", bus.index, mysettings.channel, mysettings.bitrate, mysettings.prf, mysettings.plen, (double)mysettings.gain_db);
+				PX4_INFO("UWB settings on tag %d: channel %d, bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", bus.index, mysettings.channel, mysettings.bitrate, mysettings.prf, mysettings.plen, (double)mysettings.gain_db);
 				uwb.id = bus.index;
 				//uwb.channel = mysettings.channel;
 				uwb.bitrate = mysettings.bitrate;
@@ -844,7 +849,7 @@ namespace pozyx
 				uwb.gain_db = (double)mysettings.gain_db;
 
 				uwb.timestamp = hrt_absolute_time();
-				orb_publish(ORB_ID(pozyx_uwb),uwb_pub_fd, &uwb);							
+				orb_publish(ORB_ID(pozyx_uwb),uwb_pub_fd,&uwb);							
 			}
 		}
 	}
@@ -1091,6 +1096,11 @@ pozyx_commands(int argc, char *argv[])
 	struct vehicle_command_s cmd;
 	memset(&cmd, 0, sizeof(cmd));
 
+	/* Initialize Status Message */
+	struct pozyx_status_s status;
+	memset(&status, 0, sizeof(status));
+	orb_advert_t status_pub_fd = orb_advertise(ORB_ID(pozyx_status), &status);
+
 	/* command ack 
 	orb_advert_t command_ack_pub = nullptr;
 	struct vehicle_command_ack_s command_ack;
@@ -1150,9 +1160,14 @@ pozyx_commands(int argc, char *argv[])
 				//This needs redesigned, since the thread must be running for this to happen
 				if (thread_running) {
 					warnx("\trunning\n");
+					status.status = 1;
 				} else {
 					warnx("\tnot started\n");
+					status.status = 0;
 				}
+				status.timestamp = hrt_absolute_time();
+				orb_publish(ORB_ID(pozyx_status),status_pub_fd,&status);
+
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETTAGSTATUS) {
 				pozyx::testorb(POZYX_BUS_ALL, 2);
