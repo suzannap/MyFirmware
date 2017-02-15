@@ -1811,7 +1811,7 @@ MulticopterPositionControl::task_main()
 					}
 
 					float thrust_abs = thrust_sp.length();
-					float tilt_max = _params.tilt_max_air;
+					//float tilt_max = _params.tilt_max_air;
 					float thr_max = _params.thr_max;
 					/* filter vel_z over 1/8sec */
 					_vel_z_lp = _vel_z_lp * (1.0f - dt * 8.0f) + dt * 8.0f * _vel(2);
@@ -1823,7 +1823,7 @@ MulticopterPositionControl::task_main()
 					if (!_control_mode.flag_control_manual_enabled && _pos_sp_triplet.current.valid &&
 					    _pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LAND) {
 						/* limit max tilt and min lift when landing */
-						tilt_max = _params.tilt_max_land;
+						//tilt_max = _params.tilt_max_land;
 
 						if (thr_min < 0.0f) {
 							thr_min = 0.0f;
@@ -1935,8 +1935,8 @@ MulticopterPositionControl::task_main()
 					}
 					else {			
 						//try reducing integral error on saturation? maybe it won't go crazy this way		
-						thrust_int(0) *= 0.9;
-						thrust_int(1) *= 0.9;
+						thrust_int(0) *= 0.9f;
+						thrust_int(1) *= 0.9f;
 					}
 
 					if (_control_mode.flag_control_climb_rate_enabled && !saturation_z) {
