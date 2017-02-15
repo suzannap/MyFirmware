@@ -986,20 +986,23 @@ MulticopterPositionControl::control_offboard(float dt)
 
 	if (_pos_sp_triplet.current.valid) {
 		if (_control_mode.flag_control_position_enabled && _pos_sp_triplet.current.position_valid) {
+			//reset velocity setpoints
+			_vel_sp(0) = 0;
+			_vel_sp(1) = 0;			
 			/* control position */
 			_pos_sp(0) = _pos_sp_triplet.current.x;
 			_pos_sp(1) = _pos_sp_triplet.current.y;
 
-		} else if (_control_mode.flag_control_velocity_enabled && _pos_sp_triplet.current.velocity_valid) {
+		} else {
+				reset_pos_sp();
+				_run_pos_control = false; /* request velocity setpoint to be used, instead of position setpoint */
+		}
+		if (_control_mode.flag_control_velocity_enabled && _pos_sp_triplet.current.velocity_valid) {
 			/* control velocity */
-			/* reset position setpoint to current position if needed */
-			reset_pos_sp();
 
-			/* set position setpoint move rate */
 			_vel_sp(0) = _pos_sp_triplet.current.vx;
 			_vel_sp(1) = _pos_sp_triplet.current.vy;
 
-			_run_pos_control = false; /* request velocity setpoint to be used, instead of position setpoint */
 		}
 
 		if (_pos_sp_triplet.current.yaw_valid) {
@@ -1348,8 +1351,9 @@ MulticopterPositionControl::task_main()
 	fds[0].events = POLLIN;
 
 	while (!_task_should_exit) {
-		/* wait for up to 20ms for data */
-		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 20);
+		
+		/* wait for up to 200ms for data */
+		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 200);
 
 		/* timed out - periodic check for _task_should_exit */
 		if (pret == 0) {
@@ -1537,8 +1541,8 @@ MulticopterPositionControl::task_main()
 			} else {
 				/* run position & altitude controllers, if enabled (otherwise use already computed velocity setpoints) */
 				if (_run_pos_control) {
-					_vel_sp(0) = (_pos_sp(0) - _pos(0)) * _params.pos_p(0);
-					_vel_sp(1) = (_pos_sp(1) - _pos(1)) * _params.pos_p(1);
+					_vel_sp(0) += (_pos_sp(0) - _pos(0)) * _params.pos_p(0);
+					_vel_sp(1) += (_pos_sp(1) - _pos(1)) * _params.pos_p(1);
 				}
 
 				// guard against any bad velocity values
@@ -1868,15 +1872,16 @@ MulticopterPositionControl::task_main()
 						saturation_z = true;
 					}
 
+				/*boats want nothing to do with tilt limitations
 					if (_control_mode.flag_control_velocity_enabled || _control_mode.flag_control_acceleration_enabled) {
 
-						/* limit max tilt */
+						//limit max tilt 
 						if (thr_min >= 0.0f && tilt_max < M_PI_F / 2 - 0.05f) {
-							/* absolute horizontal thrust */
+							// absolute horizontal thrust 
 							float thrust_sp_xy_len = math::Vector<2>(thrust_sp(0), thrust_sp(1)).length();
 
 							if (thrust_sp_xy_len > 0.01f) {
-								/* max horizontal thrust for given vertical thrust*/
+								// max horizontal thrust for given vertical thrust
 								float thrust_xy_max = -thrust_sp(2) * tanf(tilt_max);
 
 								if (thrust_sp_xy_len > thrust_xy_max) {
@@ -1888,6 +1893,7 @@ MulticopterPositionControl::task_main()
 							}
 						}
 					}
+						*/
 
 					if (_control_mode.flag_control_altitude_enabled) {
 						/* thrust compensation for altitude only control modes */
@@ -1912,33 +1918,13 @@ MulticopterPositionControl::task_main()
 					thrust_abs = thrust_sp.length(); /* recalculate because it might have changed */
 
 					if (thrust_abs > thr_max) {
-						if (thrust_sp(2) < 0.0f) {
-							if (-thrust_sp(2) > thr_max) {
-								/* thrust Z component is too large, limit it */
-								thrust_sp(0) = 0.0f;
-								thrust_sp(1) = 0.0f;
-								thrust_sp(2) = -thr_max;
-								saturation_xy = true;
-								saturation_z = true;
 
-							} else {
-								/* preserve thrust Z component and lower XY, keeping altitude is more important than position */
-								float thrust_xy_max = sqrtf(thr_max * thr_max - thrust_sp(2) * thrust_sp(2));
-								float thrust_xy_abs = math::Vector<2>(thrust_sp(0), thrust_sp(1)).length();
-								float k = thrust_xy_max / thrust_xy_abs;
-								thrust_sp(0) *= k;
-								thrust_sp(1) *= k;
-								saturation_xy = true;
-							}
-
-						} else {
-							/* Z component is negative, going down, simply limit thrust vector */
-							float k = thr_max / thrust_abs;
-							thrust_sp *= k;
-							saturation_xy = true;
-							saturation_z = true;
-						}
-
+						/*  simply limit thrust vector */
+						float k = thr_max / thrust_abs;
+						thrust_sp *= k;
+						saturation_xy = true;
+						saturation_z = true;
+					
 						thrust_abs = thr_max;
 					}
 
@@ -1946,6 +1932,11 @@ MulticopterPositionControl::task_main()
 					if (_control_mode.flag_control_velocity_enabled && !saturation_xy) {
 						thrust_int(0) += vel_err(0) * _params.vel_i(0) * dt;
 						thrust_int(1) += vel_err(1) * _params.vel_i(1) * dt;
+					}
+					else {			
+						//try reducing integral error on saturation? maybe it won't go crazy this way		
+						thrust_int(0) *= 0.9;
+						thrust_int(1) *= 0.9;
 					}
 
 					if (_control_mode.flag_control_climb_rate_enabled && !saturation_z) {

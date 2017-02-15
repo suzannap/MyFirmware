@@ -92,6 +92,7 @@ namespace pozyx
 	void	reset(enum POZYX_BUS busid, int count);
 	void	getposition(enum POZYX_BUS busid, int count, bool print_result);
 	void	getpositionorb(enum POZYX_BUS busid, int count);
+	void	getpositiontest(enum POZYX_BUS busid, int count, bool print_result);
 	void	addanchor(enum POZYX_BUS busid, int count, uint16_t network_id, int32_t x, int32_t y, int32_t z);
 	void	autoanchors(enum POZYX_BUS busid, int count);
 	void	getanchors(enum POZYX_BUS busid, int count);
@@ -321,7 +322,7 @@ namespace pozyx
 		struct att_pos_mocap_s pos;
 		unsigned startid = 0;
 		int validcount = 0;
-		int totalerror = 0;
+		//int totalerror = 0;
 
 
 		pos.x = 0;
@@ -334,7 +335,7 @@ namespace pozyx
 
 			//if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_3D)){
 			//if (POZYX_SUCCESS == bus.dev->getCoordinates(&poz_coordinates[i])){
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
+			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 50)){
 
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
@@ -344,19 +345,22 @@ namespace pozyx
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
 					}
-					totalerror = abs(poz_error.xy);
-					if(totalerror > 300 || totalerror < 10) {
+					//totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+					if(poz_error.xy > 500 ) { //|| totalerror < 7
+						poz_coordinates[i].x = 0;
+						poz_coordinates[i].y = 0;
+						/*
 						// not a good reading, try again
-						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, -200)){
+						if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, 50)){
 							if (print_result) {
 								PX4_INFO("2nd measure current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
 							}
 							if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
 								if (print_result) {
 									PX4_INFO("2nd measure Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-								}
-								totalerror = abs(poz_error.xy);
-								if(totalerror > 300 || totalerror < 10) {
+								}								
+								totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z) + abs(poz_error.xy) + abs(poz_error.xz) + abs(poz_error.yz);
+								if(poz_error.xy > 500 || totalerror < 7) {
 									//2nd reading also bad
 									poz_coordinates[i].x = 0;
 									poz_coordinates[i].y = 0;
@@ -367,6 +371,7 @@ namespace pozyx
 								}
 							}
 						}
+						*/
 					}
 					else {
 						validcount += 1;
@@ -409,8 +414,8 @@ namespace pozyx
 			pos.q[2] = myq(2);
 			pos.q[3] = myq(3);
 
-			float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].z),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
-			if ((sensor_distance > 1150) || (sensor_distance < 850)){
+			float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].x),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
+			if ((sensor_distance > 1400) || (sensor_distance < 600)){
 				//sensor measurements are not consistent
 				validcount = 0;
 			}
@@ -432,6 +437,27 @@ namespace pozyx
 			}
 		}
 	}
+		
+	void
+	getpositiontest(enum POZYX_BUS busid, int count, bool print_result)
+	{
+
+		struct att_pos_mocap_s pos;
+
+		pos.q[0] = 1;
+		pos.q[1] = 0;
+		pos.q[2] = 0;
+		pos.q[3] = 0;
+
+		pos.timestamp = hrt_absolute_time();
+		pos.x = 0;
+		pos.y =0; 
+		pos.z =0;
+		orb_advert_t pos_pub = orb_advertise(ORB_ID(att_pos_mocap), &pos);
+		orb_publish(ORB_ID(att_pos_mocap), pos_pub, &pos);
+
+	}
+
 
 
 	void
@@ -586,18 +612,56 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			uint8_t num_anchors =6;
+			uint8_t num_anchors =12;
 
-			//Building 9
+			/*
+			//Building 9 channel 2/3
 			device_coordinates_t anchorlist[num_anchors] = {
-				{0x0201, 1, {-304, -7250, -145}},
-				{0x0202, 1, {-304, -13515, -104}},
-				{0x0203, 1, {5694, -21167, 22}},
-				{0x0204, 1, {15514, -1379, 6313}},
-				{0x0205, 1, {10122, -336, -653}},
-				{0x0206, 1, {4779, -345, 124}}
+				{0x0201, 1, {-313, -7254, 1804}},
+				{0x0202, 1, {-314, -13520, 1847}},
+				{0x0203, 1, {5686, -21169, 1972}},
+				{0x0204, 1, {15509, -1383, 8251}},
+				{0x0205, 1, {10117, -347, 2071}},
+				{0x0206, 1, {4773, -347, 2071}},
+				{0x0301, 1, {-315, -7623, 1811}},
+				{0x0302, 1, {-313, -13758, 1865}},
+				{0x0303, 1, {5888, -21170, 1970}},
+				{0x0304, 1, {15950, -1737, 8236}},
+				{0x0305, 1, {10168, -340, 2083}},
+				{0x0306, 1, {3834, -35, 2039}}
+			};
+			*/
+			num_anchors =9;	
+			/*
+			//Pleasant View ch2
+			device_coordinates_t anchorlist[num_anchors] = {
+				{0x682E, 1, {-12102, -3313, 1017}},
+				{0x6011, 1, {-3339, 11420, 1037}},
+				{0x6021, 1, {3218, 109, 1046}},
+				{0x6030, 1, {-15997, 11421, 1159}},
+				{0x6032, 1, {-53, -3305, 1022}},
+				{0x6034, 1, {3201, 9689, 1035}},
+				{0x6036, 1, {-9634, 11421, 1159}},
+				{0x6832, 1, {-5777, -3308, 1012}},
+				{0x6852, 1, {-18880, -785, 1000}}
+			};
+			*/
+
+
+			//Pleasant View ch3
+			device_coordinates_t anchorlist[num_anchors] = {
+				{0x603C, 1, {589, -3302, 1026}},
+				{0x604C, 1, {3202, 9146, 1042}},
+				{0x6038, 1, {-18880, -1340, 1020}},
+				{0x6028, 1, {-12770, -3318, 1017}},
+				{0x6037, 1, {-8972, 11420, 1157}},
+				{0x6824, 1, {3213, 89, 1523}},
+				{0x6848, 1, {-2761, 11419, 1044}},
+				{0x6853, 1, {-6443, -3309, 1021}},
+				{0x6854, 1, {-15296, 11423, 1175}}
 			};
 			
+					
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
 				for (int j = 0; j < num_anchors; j++) {
@@ -628,7 +692,7 @@ namespace pozyx
 			}
 			*/
 			usleep(100000);
-			uint8_t min_anchors = 132; //4 && auto selection bit
+			uint8_t min_anchors = 136; //8 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
 				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
 					PX4_INFO("Auto anchor selection set. Minimum %d anchors used.", min_anchors);
@@ -914,7 +978,14 @@ pozyx_main(int argc, char *argv[])
 			}
 
 			thread_should_exit = false;
-			/*
+/*
+				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
+												SCHED_DEFAULT, 
+												SCHED_PRIORITY_DEFAULT, 
+												2000, 
+												pozyx_pub_main,
+												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
+			
 			if (count == 1) {
 				daemon_task = px4_task_spawn_cmd("pozyx_pub", 
 												SCHED_DEFAULT, 
@@ -931,11 +1002,12 @@ pozyx_main(int argc, char *argv[])
 												pozyx_pub_main_2,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 			}
+
 			*/
 				daemon_task = px4_task_spawn_cmd("pozyx_commands", 
 												SCHED_DEFAULT, 
-												SCHED_PRIORITY_DEFAULT, 
-												2000, 
+												(SCHED_PRIORITY_MAX -10), 
+												5400, 
 												pozyx_commands,
 												(argv) ? (char *const *)&argv[2] : (char *const *)NULL);
 
@@ -1059,7 +1131,7 @@ pozyx_pub_main(int argc, char *argv[])
 	thread_running = true;
 
 	while (!thread_should_exit) {
-		pozyx::getposition(POZYX_BUS_ALL, 1, false);
+		pozyx::getpositiontest(POZYX_BUS_ALL, 1, false);
 		usleep(1000000);
 	}
 
@@ -1116,8 +1188,9 @@ pozyx_commands(int argc, char *argv[])
 	fds[0].events = POLLIN;
 
 	while (!thread_should_exit) {
-		/* wait for up to 1000ms for data */
-		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 1000);
+		usleep(100);
+		/* wait for up to 2500ms for data */
+		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 2500);
 
 		/* timed out - periodic check for thread_should_exit, etc. */
 		if (pret == 0) {

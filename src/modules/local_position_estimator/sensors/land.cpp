@@ -67,7 +67,7 @@ void BlockLocalPositionEstimator::landCorrect()
 	// fault detection
 	float beta = (r.transpose() * (S_I * r))(0, 0);
 
-	if (beta > BETA_TABLE[n_y_land]) {
+	if (beta > 10000 * BETA_TABLE[n_y_land]) { //also don't care about this trip for a boat
 		if (_landFault < FAULT_MINOR) {
 			_landFault = FAULT_MINOR;
 			mavlink_and_console_log_info(&mavlink_log_pub, "[lpe] land fault,  beta %5.2f", double(beta));
