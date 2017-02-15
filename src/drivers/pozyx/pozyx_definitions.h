@@ -300,4 +300,17 @@
 #define PIN_ACTIVE_LOW                    0
 #define PIN_ACTIVE_HIGH                   1
 
+// Define Custom Mav Commands
+#define MAV_CMD_POZYX_START               31010
+#define MAV_CMD_POZYX_STOP                31011
+#define MAV_CMD_POZYX_GETSTATUS           31012
+#define MAV_CMD_POZYX_GETTAGSTATUS        31013
+#define MAV_CMD_POZYX_GETPOSITION         31014
+#define MAV_CMD_POZYX_CLEARANCHORS        31015
+#define MAV_CMD_POZYX_ADDANCHOR           31016
+#define MAV_CMD_POZYX_GETANCHORS          31017
+#define MAV_CMD_POZYX_GETUWB              31018
+#define MAV_CMD_POZYX_SETUWB              31019
+#define MAV_CMD_POZYX_RESETTOFACTORY      31020
+
 #endif

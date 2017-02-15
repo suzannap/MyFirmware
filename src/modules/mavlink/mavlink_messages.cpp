@@ -93,6 +93,12 @@
 #include <uORB/topics/collision_report.h>
 #include <uORB/uORB.h>
 
+#include <uORB/topics/pozyx_status.h>
+#include <uORB/topics/pozyx_tagstatus.h>
+#include <uORB/topics/pozyx_position.h>
+#include <uORB/topics/pozyx_anchor.h>
+#include <uORB/topics/pozyx_uwb.h>
+
 
 static uint16_t cm_uint16_from_m_float(float m);
 static void get_mavlink_mode_state(struct vehicle_status_s *status, uint8_t *mavlink_state,
@@ -1933,6 +1939,7 @@ protected:
 
 				msg.q[0] = 1.0f;
 				msg.q[1] = 0.0f;
+
 				msg.q[2] = 0.0f;
 				msg.q[3] = 0.0f;
 
@@ -3592,6 +3599,342 @@ protected:
 	}
 };
 
+class MavlinkStreamPozyxStatus : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamPozyxStatus::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "POZYX_STATUS";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_POZYX_STATUS;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamPozyxStatus(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_POZYX_STATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_sub;
+	uint64_t _pozyx_status_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamPozyxStatus(MavlinkStreamPozyxStatus &);
+	MavlinkStreamPozyxStatus &operator = (const MavlinkStreamPozyxStatus &);
+
+protected:
+	explicit MavlinkStreamPozyxStatus(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_sub(_mavlink->add_orb_subscription(ORB_ID(pozyx_status))),
+		_pozyx_status_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct pozyx_status_s _pozyx_status;
+
+		if (_sub->update(&_pozyx_status_time, &_pozyx_status)) {
+
+			mavlink_pozyx_status_t msg;
+
+			msg.status = _pozyx_status.status;
+			PX4_INFO("Daemon Status: %d", msg.status);			
+			mavlink_msg_pozyx_status_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
+};
+
+class MavlinkStreamPozyxTagStatus : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamPozyxTagStatus::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "POZYX_TAGSTATUS";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_POZYX_TAGSTATUS;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamPozyxTagStatus(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_POZYX_TAGSTATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_sub;
+	uint64_t _pozyx_tagstatus_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamPozyxTagStatus(MavlinkStreamPozyxTagStatus &);
+	MavlinkStreamPozyxTagStatus &operator = (const MavlinkStreamPozyxTagStatus &);
+
+protected:
+	explicit MavlinkStreamPozyxTagStatus(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_sub(_mavlink->add_orb_subscription(ORB_ID(pozyx_tagstatus))),
+		_pozyx_tagstatus_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct pozyx_tagstatus_s _pozyx_tagstatus;
+
+		if (_sub->update(&_pozyx_tagstatus_time, &_pozyx_tagstatus)) {
+
+			mavlink_pozyx_tagstatus_t msg;
+
+			msg.id = _pozyx_tagstatus.id;
+			msg.tag_id = _pozyx_tagstatus.tag_id;
+			msg.result = _pozyx_tagstatus.result;
+
+			PX4_INFO("Tag %d Tag ID: %d Result: %d", msg.id, msg.tag_id, msg.result);			
+			mavlink_msg_pozyx_tagstatus_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
+};
+
+class MavlinkStreamPozyxPosition : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamPozyxPosition::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "POZYX_POSITION";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_POZYX_POSITION;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamPozyxPosition(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_POZYX_POSITION_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_sub;
+	uint64_t _pozyx_position_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamPozyxPosition(MavlinkStreamPozyxPosition &);
+	MavlinkStreamPozyxPosition &operator = (const MavlinkStreamPozyxPosition &);
+
+protected:
+	explicit MavlinkStreamPozyxPosition(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_sub(_mavlink->add_orb_subscription(ORB_ID(pozyx_position))),
+		_pozyx_position_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct pozyx_position_s _pozyx_position;
+
+		if (_sub->update(&_pozyx_position_time, &_pozyx_position)) {
+
+			mavlink_pozyx_position_t msg;
+
+			msg.id = _pozyx_position.id;
+			msg.x_pos = _pozyx_position.x_pos;
+			msg.y_pos = _pozyx_position.y_pos;
+			msg.z_pos = _pozyx_position.z_pos;
+			msg.x_cov = _pozyx_position.x_cov;
+			msg.y_cov = _pozyx_position.y_cov;
+			msg.z_cov = _pozyx_position.z_cov;
+			msg.xy_cov = _pozyx_position.xy_cov;
+			msg.xz_cov = _pozyx_position.xz_cov;
+			msg.yz_cov = _pozyx_position.yz_cov;
+
+			PX4_INFO("Current position tag %d: %d   %d   %d", _pozyx_position.id, _pozyx_position.x_pos, _pozyx_position.y_pos, _pozyx_position.z_pos);
+			mavlink_msg_pozyx_position_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
+};
+
+class MavlinkStreamPozyxAnchor : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamPozyxAnchor::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "POZYX_ANCHOR";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_POZYX_ANCHOR;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamPozyxAnchor(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_POZYX_ANCHOR_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_sub;
+	uint64_t _pozyx_anchor_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamPozyxAnchor(MavlinkStreamPozyxAnchor &);
+	MavlinkStreamPozyxAnchor &operator = (const MavlinkStreamPozyxAnchor &);
+
+protected:
+	explicit MavlinkStreamPozyxAnchor(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_sub(_mavlink->add_orb_subscription(ORB_ID(pozyx_anchor))),
+		_pozyx_anchor_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct pozyx_anchor_s _pozyx_anchor;
+
+		if (_sub->update(&_pozyx_anchor_time, &_pozyx_anchor)) {
+
+			mavlink_pozyx_anchor_t msg;
+
+			msg.id = _pozyx_anchor.id;
+			msg.anchor_ct = _pozyx_anchor.anchor_ct;
+			msg.anchor_id = _pozyx_anchor.anchor_id;
+			msg.x_pos = _pozyx_anchor.x_pos;
+			msg.y_pos = _pozyx_anchor.y_pos;
+			msg.z_pos = _pozyx_anchor.z_pos;
+
+			PX4_INFO("ID: %d Count: %d Anchor 0x%x at (%d, %d, %d)", _pozyx_anchor.id, _pozyx_anchor.anchor_ct, _pozyx_anchor.anchor_id, _pozyx_anchor.x_pos, _pozyx_anchor.y_pos, _pozyx_anchor.z_pos);
+
+			mavlink_msg_pozyx_anchor_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
+};
+
+class MavlinkStreamPozyxUWB : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamPozyxUWB::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "POZYX_UWB";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_POZYX_UWB;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamPozyxUWB(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_POZYX_UWB_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_sub;
+	uint64_t _pozyx_uwb_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamPozyxUWB(MavlinkStreamPozyxUWB &);
+	MavlinkStreamPozyxUWB &operator = (const MavlinkStreamPozyxUWB &);
+
+protected:
+	explicit MavlinkStreamPozyxUWB(Mavlink *mavlink) : MavlinkStream(mavlink),
+		_sub(_mavlink->add_orb_subscription(ORB_ID(pozyx_uwb))),
+		_pozyx_uwb_time(0)
+	{}
+
+	void send(const hrt_abstime t)
+	{
+		struct pozyx_uwb_s _pozyx_uwb;
+
+		if (_sub->update(&_pozyx_uwb_time, &_pozyx_uwb)) {
+
+			mavlink_pozyx_uwb_t msg;
+
+			msg.id = _pozyx_uwb.id;
+			msg.bitrate = _pozyx_uwb.bitrate;
+			msg.prf = _pozyx_uwb.prf;
+			msg.plen = _pozyx_uwb.plen;
+			msg.gain_db = _pozyx_uwb.gain_db;
+
+			PX4_INFO("UWB settings on tag %d: bitrate %d, prf %d, plen 0x%x, gain_db %1.1f", _pozyx_uwb.id, _pozyx_uwb.bitrate, _pozyx_uwb.prf, _pozyx_uwb.plen, (double)_pozyx_uwb.gain_db);
+
+			mavlink_msg_pozyx_uwb_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
+};
+
 const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static, &MavlinkStreamHeartbeat::get_id_static),
 	new StreamListItem(&MavlinkStreamStatustext::new_instance, &MavlinkStreamStatustext::get_name_static, &MavlinkStreamStatustext::get_id_static),
@@ -3638,5 +3981,10 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamCollision::new_instance, &MavlinkStreamCollision::get_name_static, &MavlinkStreamCollision::get_id_static),
 	new StreamListItem(&MavlinkStreamWind::new_instance, &MavlinkStreamWind::get_name_static, &MavlinkStreamWind::get_id_static),
 	new StreamListItem(&MavlinkStreamMountStatus::new_instance, &MavlinkStreamMountStatus::get_name_static, &MavlinkStreamMountStatus::get_id_static),
+	new StreamListItem(&MavlinkStreamPozyxStatus::new_instance, &MavlinkStreamPozyxStatus::get_name_static, &MavlinkStreamPozyxStatus::get_id_static),
+	new StreamListItem(&MavlinkStreamPozyxTagStatus::new_instance, &MavlinkStreamPozyxTagStatus::get_name_static, &MavlinkStreamPozyxTagStatus::get_id_static),
+	new StreamListItem(&MavlinkStreamPozyxPosition::new_instance, &MavlinkStreamPozyxPosition::get_name_static, &MavlinkStreamPozyxPosition::get_id_static),
+	new StreamListItem(&MavlinkStreamPozyxAnchor::new_instance, &MavlinkStreamPozyxAnchor::get_name_static, &MavlinkStreamPozyxAnchor::get_id_static),
+	new StreamListItem(&MavlinkStreamPozyxUWB::new_instance, &MavlinkStreamPozyxUWB::get_name_static, &MavlinkStreamPozyxUWB::get_id_static),
 	nullptr
 };
