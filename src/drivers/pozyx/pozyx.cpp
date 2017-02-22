@@ -49,6 +49,8 @@ static int daemon_task;				/**< Handle of daemon task / thread */
 static int count = 0;
 static int tag_height = 0;
 static int err_thresholds[3] = {300,1300,700};
+static device_coordinates_t stored_anchors[24];
+static int stored_anchors_count = 0;
 
 enum POZYX_BUS {
 	POZYX_BUS_ALL = 0,
@@ -457,48 +459,10 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			/*
-			uint8_t num_anchors =12;
-
-			//Building 9 channel 2/3
-			device_coordinates_t anchorlist[num_anchors] = {
-				{0x0201, 1, {-313, -7254, 1804}},
-				{0x0202, 1, {-314, -13520, 1847}},
-				{0x0203, 1, {5686, -21169, 1972}},
-				{0x0204, 1, {15509, -1383, 8251}},
-				{0x0205, 1, {10117, -347, 2071}},
-				{0x0206, 1, {4773, -347, 2071}},
-				{0x0301, 1, {-315, -7623, 1811}},
-				{0x0302, 1, {-313, -13758, 1865}},
-				{0x0303, 1, {5888, -21170, 1970}},
-				{0x0304, 1, {15950, -1737, 8236}},
-				{0x0305, 1, {10168, -340, 2083}},
-				{0x0306, 1, {3834, -35, 2039}}
-			};
-					
-
-			if (bus.dev->clearDevices() == POZYX_SUCCESS){
-				for (int j = 0; j < num_anchors; j++) {
-					if (bus.dev->addDevice(anchorlist[j]) != POZYX_SUCCESS) {
-						PX4_INFO("failed to add anchor");
-						exit(1);
-					}
-					PX4_INFO("Anchor 0x%x successfully added at (%d, %d, %d)", anchorlist[j].network_id, anchorlist[j].pos.x, anchorlist[j].pos.y, anchorlist[j].pos.z);
-				}
-				if (bus.dev->getDeviceListSize(&num_anchors) == POZYX_SUCCESS) {
-					PX4_INFO("%d anchors configured", num_anchors);
-					if (bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS) == POZYX_SUCCESS) {
-						PX4_INFO("%d anchors saved", num_anchors);
-					}
-				}
-			}
-			*/
-
-			usleep(100000);
-			uint8_t min_anchors = 136; //8 && auto selection bit
-			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
-				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &min_anchors, 1) == POZYX_SUCCESS) {
-					PX4_INFO("Auto anchor selection set. Minimum %d anchors used.", min_anchors);
+			uint8_t max_anchors = 134; //6 && auto selection bit
+			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
+				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
+					PX4_INFO("Auto anchor selection set. Maximum %d anchors used.", max_anchors);
 				}		
 			}
 
@@ -515,12 +479,12 @@ namespace pozyx
 
 		unsigned startid = 0;
 		PX4_INFO("Adding anchor 0x%x at coordinates (%d, %d, %d)...", network_id, x, y, z);
+		device_coordinates_t poz_anchor = {network_id, 1, {x, y, z}};
 
 		for (int i=0; i<count; i++){	
 
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
-			device_coordinates_t poz_anchor = {network_id, 1, {x, y, z}};
 			if (bus.dev->addDevice(poz_anchor) == POZYX_SUCCESS){
 				if (bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS) == POZYX_SUCCESS) {
 					PX4_INFO("Anchor 0x%x added to tag %d", network_id, bus.index);
@@ -538,9 +502,12 @@ namespace pozyx
 				anchor.y_pos = y;
 				anchor.z_pos = z;
 				anchor.timestamp = hrt_absolute_time();
-				orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);	
+				orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);
+				usleep(300000);	
+			}
 		}
-		}
+		stored_anchors_count = anchor.anchor_ct;
+		stored_anchors[stored_anchors_count-1] = poz_anchor;
 
 	}
 
@@ -578,6 +545,10 @@ namespace pozyx
 			anchor.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);	
 		}
+		for (int i=0; i<24; i++) {
+			stored_anchors[i] = {0, 1, {0, 0, 0}};
+			stored_anchors_count = 0;
+		}
 	}
 
 	void
@@ -602,6 +573,9 @@ namespace pozyx
 		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
 
 		unsigned startid = 0;
+		anchor.x_pos = 0;
+		anchor.y_pos = 0;
+		anchor.z_pos = 0;
 
 		for (int i=0; i<count; i++){			
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
@@ -614,32 +588,21 @@ namespace pozyx
 				anchor.anchor_ct = device_list_size;
 				
 				if (device_list_size > 0) {
-					uint16_t anchors[device_list_size];
-					if (bus.dev->getAnchorIds(anchors, device_list_size) == POZYX_SUCCESS) {
-						coordinates_t coordinates;
-						for (int j=0; j<device_list_size; j++){
-							if (bus.dev->getDeviceCoordinates(anchors[j], &coordinates) == POZYX_SUCCESS) {
-								PX4_INFO("   Anchor 0x%x at (%d, %d, %d)", anchors[j], coordinates.x, coordinates.y, coordinates.z);
-								anchor.anchor_id = anchors[j];
-								anchor.x_pos = coordinates.x;
-								anchor.y_pos = coordinates.y;
-								anchor.z_pos = coordinates.z;
-								
-								anchor.timestamp = hrt_absolute_time();
-								orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);							
-							}
+					for (int j=0; j<stored_anchors_count; j++){
+						anchor.anchor_id = stored_anchors[j].network_id;
+						uint8_t version = 0;
+						if (bus.dev->getFirmwareVersion(&version, stored_anchors[j].network_id) == POZYX_SUCCESS) {
+							anchor.found = 1;								
 						}
+						else {
+							anchor.found = 0;
+						}
+						anchor.timestamp = hrt_absolute_time();
+						orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);		
+						usleep(1000000);					
 					}
-				}
-				else{
-					//update with zero count anyway
-					anchor.anchor_id = 0;
-					anchor.x_pos = 0;
-					anchor.y_pos = 0;
-					anchor.z_pos = 0;
-					anchor.timestamp = hrt_absolute_time();
-					orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);	
-				}
+					
+				}	
 			}
 		}
 	}
@@ -650,15 +613,13 @@ namespace pozyx
 	{
 		unsigned startid = 0;
 
-		uint8_t bitrates[3] = {0, 1, 2};
-		uint8_t prfs[2] = {1, 2};
-		uint8_t plens[8] = {0x0C, 0x28, 0x18, 0x08, 0x34, 0x24, 0x14, 0x04};
+		//uint8_t plens[8] = {0x0C, 0x28, 0x18, 0x08, 0x34, 0x24, 0x14, 0x04};
 		UWB_settings_t mysettings;
 		mysettings.channel = channel;
-		mysettings.bitrate = bitrates[bitrate];
-		mysettings.prf = prfs[prf];
-		mysettings.plen = plens[plen];
-		mysettings.gain_db = 0; //gain_db;
+		mysettings.bitrate = bitrate;
+		mysettings.prf = prf;
+		mysettings.plen = plen;
+		mysettings.gain_db = gain_db;
 
 		uint8_t device_list_size;
 
@@ -719,7 +680,8 @@ namespace pozyx
 				uwb.gain_db = (double)mysettings.gain_db;
 
 				uwb.timestamp = hrt_absolute_time();
-				orb_publish(ORB_ID(pozyx_uwb),uwb_pub_fd,&uwb);							
+				orb_publish(ORB_ID(pozyx_uwb),uwb_pub_fd,&uwb);	
+				usleep(1000000);						
 			}
 		}
 	}
@@ -999,6 +961,7 @@ pozyx_commands(int argc, char *argv[])
 				uint8_t plen = static_cast<int>(cmd.param4);
 				float gain_db = cmd.param5/2.0;
 				pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db);
+				pozyx::getuwb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
 				pozyx::resettofactory(POZYX_BUS_ALL, 2);

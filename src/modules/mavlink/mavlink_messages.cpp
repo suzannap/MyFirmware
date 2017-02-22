@@ -3719,6 +3719,12 @@ protected:
 			msg.id = _pozyx_tagstatus.id;
 			msg.tag_id = _pozyx_tagstatus.tag_id;
 			msg.result = _pozyx_tagstatus.result;
+			msg.error_code = _pozyx_tagstatus.error_code;
+			msg.id_2 = _pozyx_tagstatus.id_2;
+			msg.tag_id_2 = _pozyx_tagstatus.tag_id_2;
+			msg.result_2 = _pozyx_tagstatus.result_2;
+			msg.error_code_2 = _pozyx_tagstatus.error_code_2;
+
 
 			//PX4_INFO("Tag %d Tag ID: %d Result: %d", msg.id, msg.tag_id, msg.result);			
 			mavlink_msg_pozyx_tagstatus_send_struct(_mavlink->get_channel(), &msg);
@@ -3792,6 +3798,17 @@ protected:
 			msg.xz_cov = _pozyx_position.xz_cov;
 			msg.yz_cov = _pozyx_position.yz_cov;
 
+			msg.id_2 = _pozyx_position.id_2;
+			msg.x_pos_2 = _pozyx_position.x_pos_2;
+			msg.y_pos_2 = _pozyx_position.y_pos_2;
+			msg.z_pos_2 = _pozyx_position.z_pos_2;
+			msg.x_cov_2 = _pozyx_position.x_cov_2;
+			msg.y_cov_2 = _pozyx_position.y_cov_2;
+			msg.z_cov_2 = _pozyx_position.z_cov_2;
+			msg.xy_cov_2 = _pozyx_position.xy_cov_2;
+			msg.xz_cov_2 = _pozyx_position.xz_cov_2;
+			msg.yz_cov_2 = _pozyx_position.yz_cov_2;
+
 			//PX4_INFO("Current position tag %d: %d   %d   %d", _pozyx_position.id, _pozyx_position.x_pos, _pozyx_position.y_pos, _pozyx_position.z_pos);
 			mavlink_msg_pozyx_position_send_struct(_mavlink->get_channel(), &msg);
 		}
@@ -3856,6 +3873,7 @@ protected:
 			msg.id = _pozyx_anchor.id;
 			msg.anchor_ct = _pozyx_anchor.anchor_ct;
 			msg.anchor_id = _pozyx_anchor.anchor_id;
+			msg.found = _pozyx_anchor.found;
 			msg.x_pos = _pozyx_anchor.x_pos;
 			msg.y_pos = _pozyx_anchor.y_pos;
 			msg.z_pos = _pozyx_anchor.z_pos;
