@@ -390,22 +390,29 @@ int PozyxClass::setUWBSettings(UWB_settings_t *UWB_settings, uint16_t remote_id)
 
   uint8_t tmp[3];
   tmp[0] = UWB_settings->channel;  
-  tmp[1] = ((UWB_settings->bitrate) | (UWB_settings->prf << 2));  
+  tmp[1] = ((UWB_settings->bitrate) | (UWB_settings->prf << 6));  
   tmp[2] = UWB_settings->plen;  
   PX4_INFO("ch %x, bit/prf %x, plen %x", tmp[0], tmp[1], tmp[2]);
 
 
   // first set the uwb channel, bitrate, prf and plen, this will set gain to the default gain computed for these settings
   if(remote_id == NULL){
-    status = regWrite(POZYX_UWB_CHANNEL, tmp, 3);
-
+    status = regWrite(POZYX_UWB_CHANNEL, (uint8_t *)&tmp[0], 1);
+    usleep(2 * POZYX_DELAY_LOCAL_WRITE*1000);    
+    status = regWrite(POZYX_UWB_RATES, (uint8_t *)&tmp[1], 1);
+    usleep(2 * POZYX_DELAY_LOCAL_WRITE*1000);    
+    status = regWrite(POZYX_UWB_PLEN, (uint8_t *)&tmp[2], 1);
     usleep(2 * POZYX_DELAY_LOCAL_WRITE*1000);    
   }else{
-    status = remoteRegWrite(remote_id, POZYX_UWB_CHANNEL, tmp, 3);
+    status = remoteRegWrite(remote_id, POZYX_UWB_CHANNEL, (uint8_t *)&tmp[0], 1);
+    usleep(2 * POZYX_DELAY_REMOTE_WRITE*1000);
+    status = remoteRegWrite(remote_id, POZYX_UWB_RATES, (uint8_t *)&tmp[1], 1);
+    usleep(2 * POZYX_DELAY_REMOTE_WRITE*1000);
+    status = remoteRegWrite(remote_id, POZYX_UWB_PLEN, (uint8_t *)&tmp[2], 1);
     usleep(2 * POZYX_DELAY_REMOTE_WRITE*1000);
   }
 
-  if (status != POZYX_SUCCESS){
+  if (status == POZYX_FAILURE){
     return status;
   }  
 

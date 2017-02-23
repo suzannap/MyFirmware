@@ -97,7 +97,7 @@ namespace pozyx
 	void	getanchors(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void	getuwb(enum POZYX_BUS busid, int count);
-	void	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db);
+	void	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db, uint16_t target);
 	void	resettofactory(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void 	setthresholds(int cov_thresh, int u_dist_thresh, int l_dist_thresh);
@@ -609,7 +609,7 @@ namespace pozyx
 
 
 	void
-	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db)
+	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db, uint16_t target)
 	{
 		unsigned startid = 0;
 
@@ -621,35 +621,25 @@ namespace pozyx
 		mysettings.plen = plen;
 		mysettings.gain_db = gain_db;
 
-		uint8_t device_list_size;
+		if (target == 0) {
+			for (int i=0; i<count; i++){			
+				struct pozyx_bus_option &bus = find_bus(busid, startid);
+				startid = bus.index + 1;
 
-
-		for (int i=0; i<count; i++){			
-			struct pozyx_bus_option &bus = find_bus(busid, startid);
-			startid = bus.index + 1;
-
-			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
-				
-				/*
-				if (device_list_size > 0){
-					uint16_t devices[device_list_size];
-					if (bus.dev->getDeviceIds(devices, device_list_size) == POZYX_SUCCESS) {
-						for (int j=0; j<device_list_size; j++){
-							usleep(100000);
-							if (bus.dev->setUWBSettings(&mysettings, devices[j]) == POZYX_SUCCESS){
-								PX4_INFO("UWB settings updated on anchor 0x%x", devices[j]);
-							}
-						}
-					}
-				}
-				*/
-				usleep(100000);
 				if (bus.dev->setUWBSettings(&mysettings) == POZYX_SUCCESS){
-					//if (bus.dev->saveConfiguration(POZYX_FLASH_REGS, changedregs, 3) == POZYX_SUCCESS) {
-						PX4_INFO("UWB settings updated on tag %d", bus.index);
-					//}
+					PX4_INFO("UWB settings updated on tag %d", bus.index);
 				}
 			}
+		}
+		else {
+			struct pozyx_bus_option &bus = find_bus(busid, startid);
+
+			if (bus.dev->setUWBSettings(&mysettings, target) == POZYX_SUCCESS){
+				PX4_INFO("UWB settings updated on device %x", target);
+			}
+			else {
+				PX4_INFO("Device %x not found", target);
+			}				
 		}
 	}
 
@@ -840,7 +830,7 @@ pozyx_main(int argc, char *argv[])
 			uint8_t prf = atoi(argv[3]);
 			uint8_t plen = atoi(argv[4]);
 			float gain_db = atoi(argv[5])/2.0;
-			pozyx::setuwb(busid, count, channel, bitrate, prf, plen, gain_db);
+			pozyx::setuwb(busid, count, channel, bitrate, prf, plen, gain_db, 0);
 		}
 		else {			
 			PX4_INFO("wrong number of arguments to configure UWB settings. Requires bitrate, prf, plen, gain_db");
@@ -960,7 +950,8 @@ pozyx_commands(int argc, char *argv[])
 				uint8_t prf = static_cast<int>(cmd.param3);
 				uint8_t plen = static_cast<int>(cmd.param4);
 				float gain_db = cmd.param5/2.0;
-				pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db);
+				uint16_t target = static_cast<int>(cmd.param6);
+				pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db, target);
 				pozyx::getuwb(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
