@@ -1940,8 +1940,8 @@ MulticopterPositionControl::task_main()
 					}
 
 					//limit maximum integral correction
-					if (thrust_int(0) > 20*_params.vel_i(0)) {
-						thrust_int(0) = 20*_params.vel_i(0);
+					if (thrust_int(0) > 10*_params.vel_i(0)) {
+						thrust_int(0) = 10*_params.vel_i(0);
 					}
 					if (thrust_int(1) > 20*_params.vel_i(1)) {
 						thrust_int(1) = 20*_params.vel_i(1);
