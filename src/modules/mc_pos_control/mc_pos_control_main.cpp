@@ -1939,6 +1939,14 @@ MulticopterPositionControl::task_main()
 						thrust_int(1) *= 0.9f;
 					}
 
+					//limit maximum integral correction
+					if (thrust_int(0) > 20*_params.vel_i(0)) {
+						thrust_int(0) = 20*_params.vel_i(0);
+					}
+					if (thrust_int(1) > 20*_params.vel_i(1)) {
+						thrust_int(1) = 20*_params.vel_i(1);
+					}
+
 					if (_control_mode.flag_control_climb_rate_enabled && !saturation_z) {
 						thrust_int(2) += vel_err(2) * _params.vel_i(2) * dt;
 

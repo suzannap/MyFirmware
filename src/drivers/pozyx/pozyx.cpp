@@ -392,6 +392,7 @@ namespace pozyx
 			}
 			pos.x += poz_coordinates[i].x;
 			pos.y += poz_coordinates[i].y;
+			usleep(5000);
 
 			if (count == 1) {
 				quaternion_t poz_orientation;
