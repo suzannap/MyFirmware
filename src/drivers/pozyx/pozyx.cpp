@@ -51,6 +51,8 @@ static int tag_height = 0;
 static int err_thresholds[3] = {300,1300,700};
 static device_coordinates_t stored_anchors[24];
 static int stored_anchors_count = 0;
+static float actual_yaw = 0.0f;
+//static float yaw_error = 3.0f;
 
 enum POZYX_BUS {
 	POZYX_BUS_ALL = 0,
@@ -321,6 +323,28 @@ namespace pozyx
 	void
 	getposition(enum POZYX_BUS busid, int count, bool print_result)
 	{
+		/* subscribe to sensor_combined topic */
+		int vehicle_att_fd = orb_subscribe(ORB_ID(vehicle_attitude));
+		/* limit the update rate to 100 Hz */
+		orb_set_interval(vehicle_att_fd, 10);
+		/* wait for update */
+		px4_pollfd_struct_t fds[1] = {};
+		fds[0].fd = vehicle_att_fd;
+		fds[0].events = POLLIN;
+		int poll_ret = px4_poll(fds, 1, 100);  //wait a max of 100ms
+		if (poll_ret > 0) {
+			if (fds[0].revents & POLLIN) {
+				/* obtained data for the first file descriptor */
+				struct vehicle_attitude_s raw;
+				/* copy sensors raw data into local buffer */
+				orb_copy(ORB_ID(vehicle_attitude), vehicle_att_fd, &raw);
+				matrix::Quatf actual_orient(raw.q[0], raw.q[1], raw.q[2], raw.q[3]);
+				matrix::Vector3f actual_angles(0,0,0);
+				actual_angles = actual_orient.to_axis_angle();
+				actual_yaw = actual_angles(2);
+			}
+
+		}
 
 		/* Publish Position Topic */
 		struct pozyx_position_s position;
