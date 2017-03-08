@@ -93,7 +93,7 @@ namespace pozyx
 	void 	test(enum POZYX_BUS busid, int count);
 	void 	config(enum POZYX_BUS busid, int count);
 	void	reset(enum POZYX_BUS busid, int count);
-	void	getposition(enum POZYX_BUS busid, int count, bool print_result);
+	void	getposition(enum POZYX_BUS busid, int count, bool print_result, uint8_t type);
 	void	addanchor(enum POZYX_BUS busid, int count, uint16_t network_id, int32_t x, int32_t y, int32_t z);
 	void	autoanchors(enum POZYX_BUS busid, int count);
 	void	getanchors(enum POZYX_BUS busid, int count);
@@ -321,29 +321,30 @@ namespace pozyx
 
 
 	void
-	getposition(enum POZYX_BUS busid, int count, bool print_result)
+	getposition(enum POZYX_BUS busid, int count, bool print_result, uint8_t type)
 	{
-		/* subscribe to sensor_combined topic */
-		int vehicle_att_fd = orb_subscribe(ORB_ID(vehicle_attitude));
-		/* limit the update rate to 100 Hz */
-		orb_set_interval(vehicle_att_fd, 10);
-		/* wait for update */
-		px4_pollfd_struct_t fds[1] = {};
-		fds[0].fd = vehicle_att_fd;
-		fds[0].events = POLLIN;
-		int poll_ret = px4_poll(fds, 1, 100);  //wait a max of 100ms
-		if (poll_ret > 0) {
-			if (fds[0].revents & POLLIN) {
-				/* obtained data for the first file descriptor */
-				struct vehicle_attitude_s raw;
-				/* copy sensors raw data into local buffer */
-				orb_copy(ORB_ID(vehicle_attitude), vehicle_att_fd, &raw);
-				matrix::Quatf actual_orient(raw.q[0], raw.q[1], raw.q[2], raw.q[3]);
-				matrix::Vector3f actual_angles(0,0,0);
-				actual_angles = actual_orient.to_axis_angle();
-				actual_yaw = actual_angles(2);
+		if (type > 0) {
+			/* subscribe to sensor_combined topic */
+			int vehicle_att_fd = orb_subscribe(ORB_ID(vehicle_attitude));
+			/* limit the update rate to 100 Hz */
+			orb_set_interval(vehicle_att_fd, 10);
+			/* wait for update */
+			px4_pollfd_struct_t fds[1] = {};
+			fds[0].fd = vehicle_att_fd;
+			fds[0].events = POLLIN;
+			int poll_ret = px4_poll(fds, 1, 100);  //wait a max of 100ms
+			if (poll_ret > 0) {
+				if (fds[0].revents & POLLIN) {
+					/* obtained data for the first file descriptor */
+					struct vehicle_attitude_s raw;
+					/* copy sensors raw data into local buffer */
+					orb_copy(ORB_ID(vehicle_attitude), vehicle_att_fd, &raw);
+					matrix::Quatf actual_orient(raw.q[0], raw.q[1], raw.q[2], raw.q[3]);
+					matrix::Vector3f actual_angles(0,0,0);
+					actual_angles = actual_orient.to_axis_angle();
+					actual_yaw = actual_angles(2);
+				}
 			}
-
 		}
 
 		/* Publish Position Topic */
@@ -357,7 +358,6 @@ namespace pozyx
 		unsigned startid = 0;
 		int validcount = 0;
 		int totalerror = 0;
-
 
 		pos.x = 0;
 		pos.y = 0;
@@ -804,7 +804,8 @@ pozyx_main(int argc, char *argv[])
 
 	//fetch positions
 	if (!strcmp(verb, "getposition")) {
-		pozyx::getposition(busid, count, true);
+		uint8_t type = atoi(argv[2]);
+		pozyx::getposition(busid, count, true, type);
 		exit(0);
 	}
 
@@ -952,7 +953,8 @@ pozyx_commands(int argc, char *argv[])
 				pozyx::test(POZYX_BUS_ALL, 2);
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
-				pozyx::getposition(POZYX_BUS_ALL, 2, false);
+				uint8_t type = static_cast<int>(cmd.param1);
+				pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
 			}
 			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
 				pozyx::clearanchors(POZYX_BUS_ALL, 2);
