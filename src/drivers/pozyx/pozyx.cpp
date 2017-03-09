@@ -51,8 +51,9 @@ static int tag_height = 0;
 static int err_thresholds[3] = {300,1300,700};
 static device_coordinates_t stored_anchors[24];
 static int stored_anchors_count = 0;
-static float actual_yaw = 0.0f;
-//static float yaw_error = 3.0f;
+static double actual_yaw = 0.0f;
+static double yaw_error = 3.0f;
+static int pozyx_err_count = 0;
 
 enum POZYX_BUS {
 	POZYX_BUS_ALL = 0,
@@ -309,7 +310,6 @@ namespace pozyx
 			status.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_tagstatus),status_pub_fd, &status);
 
-
 		}
 	}
 
@@ -323,7 +323,156 @@ namespace pozyx
 	void
 	getposition(enum POZYX_BUS busid, int count, bool print_result, uint8_t type)
 	{
-		if (type > 0) {
+		/* Publish Position Topic */
+		struct pozyx_position_s position;
+		//memset(&position, 0, sizeof(position));
+		orb_advert_t position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
+	
+		struct att_pos_mocap_s pos;
+		//memset(&pos, 0, sizeof(pos));
+		orb_advert_t pos_pub = orb_advertise(ORB_ID(att_pos_mocap), &pos);
+
+		coordinates_t poz_coordinates[count];
+
+		unsigned startid = 0;
+		int validcount = 0;
+		int totalerror = 0;
+
+		pos.x = 0;
+		pos.y = 0;
+		pos.z = -5;
+		position.x_pos = 0;
+		position.y_pos = 0;
+		position.z_pos = 0;
+		position.x_cov = 0;
+		position.y_cov = 0;
+		position.z_cov = 0;
+		position.xy_cov = 0;
+		position.xz_cov = 0;
+		position.yz_cov = 0;
+		position.x_pos_2 = 0;
+		position.y_pos_2 = 0;
+		position.z_pos_2 = 0;
+		position.x_cov_2 = 0;
+		position.y_cov_2 = 0;
+		position.z_cov_2 = 0;
+		position.xy_cov_2 = 0;
+		position.xz_cov_2 = 0;
+		position.yz_cov_2 = 0;	
+
+
+		//measure first tag for every mode
+		struct pozyx_bus_option &bus = find_bus(busid, startid);
+		startid = bus.index + 1;
+
+		if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[0], POZYX_2_5D, tag_height)){
+			if (print_result) {
+				PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[0].x, poz_coordinates[0].y, poz_coordinates[0].z);
+			}
+			pos_error_t poz_error;
+			usleep(500);
+			if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
+				if (print_result) {
+					PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
+				}
+				position.id = bus.index;
+				position.x_pos = poz_coordinates[0].x;
+				position.y_pos = poz_coordinates[0].y;
+				position.z_pos = poz_coordinates[0].z;
+				position.x_cov = poz_error.x;
+				position.y_cov = poz_error.y;
+				position.z_cov = poz_error.z;
+				position.xy_cov = poz_error.xy;
+				position.xz_cov = poz_error.xz;
+				position.yz_cov = poz_error.yz;
+
+				totalerror = abs(poz_error.xy);
+				if(totalerror > err_thresholds[0]) {
+					//bad reading
+					PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);	
+				}
+				else {
+					validcount += 1;
+				}			
+			}			
+		}
+		else {			
+			pozyx_err_count += 1;
+			position.x_pos = pozyx_err_count;
+		}
+		usleep(1000);
+
+		//only measure 2nd tag if in mode to do so and first measurement was successful
+		if ((type == 0) && (validcount == 1)) {
+			struct pozyx_bus_option &bus2 = find_bus(busid, startid);
+
+			if (POZYX_SUCCESS == bus2.dev->doPositioning(&poz_coordinates[1], POZYX_2_5D, tag_height)){
+				if (print_result) {
+					PX4_INFO("Current position tag %d: %d   %d   %d", bus2.index, poz_coordinates[1].x, poz_coordinates[1].y, poz_coordinates[1].z);
+				}
+				pos_error_t poz_error;
+				usleep(500);
+				if (POZYX_SUCCESS == bus2.dev->getPositionError(&poz_error)){
+					if (print_result) {
+						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
+					}
+					position.id_2 = bus2.index;
+					position.x_pos_2 = poz_coordinates[1].x;
+					position.y_pos_2 = poz_coordinates[1].y;
+					position.z_pos_2 = poz_coordinates[1].z;
+					position.x_cov_2 = poz_error.x;
+					position.y_cov_2 = poz_error.y;
+					position.z_cov_2 = poz_error.z;
+					position.xy_cov_2 = poz_error.xy;
+					position.xz_cov_2 = poz_error.xz;
+					position.yz_cov_2 = poz_error.yz;	
+
+					totalerror = abs(poz_error.xy);
+					if(totalerror > err_thresholds[0]) {
+						//bad reading
+						PX4_INFO("Covariance error tag %d: %d", bus2.index, totalerror);	
+					}
+					else {
+						validcount += 1;
+					}			
+				}			
+			}
+			else {				
+				pozyx_err_count += 1;
+				position.x_pos_2 = pozyx_err_count;
+			}
+			usleep(1000);
+
+			//if we got 2 successful measurements
+			if (validcount == 2) {
+				double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
+				yaw_error = yaw - actual_yaw;
+
+				if (print_result) {
+					PX4_INFO("Current yaw: %f deg.", (yaw * 180 / 3.14159));
+				}
+				matrix::Vector3f pozyx_orient(0, 0, yaw);
+				matrix::Quatf myq(1.0, 0, 0, 0);
+				myq.from_axis_angle(pozyx_orient);
+				pos.q[0] = myq(0);
+				pos.q[1] = myq(1);
+				pos.q[2] = myq(2);
+				pos.q[3] = myq(3);
+
+				float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].x),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
+				if ((sensor_distance > err_thresholds[1]) || (sensor_distance < err_thresholds[2])){
+					//sensor measurements are not consistent, checking expected distance
+					validcount = 0;
+				}
+				//average positions
+				pos.x = 0.5 * (poz_coordinates[0].x + poz_coordinates[1].x);
+				pos.y = 0.5 * (poz_coordinates[0].y + poz_coordinates[1].y);
+			}
+			else {
+				validcount = 0;
+			}
+		}
+		else if ((type == 1) && (validcount == 1)) { //if just measuring 1 tag, use angle to get center position
 			/* subscribe to sensor_combined topic */
 			int vehicle_att_fd = orb_subscribe(ORB_ID(vehicle_attitude));
 			/* limit the update rate to 100 Hz */
@@ -343,138 +492,37 @@ namespace pozyx
 					matrix::Vector3f actual_angles(0,0,0);
 					actual_angles = actual_orient.to_axis_angle();
 					actual_yaw = actual_angles(2);
+					//just push current attitude back
+					pos.q[0] = raw.q[0];
+					pos.q[1] = raw.q[1];
+					pos.q[2] = raw.q[2];
+					pos.q[3] = raw.q[3];
 				}
 			}
-		}
 
-		/* Publish Position Topic */
-		struct pozyx_position_s position;
-		memset(&position, 0, sizeof(position));
-		orb_advert_t position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
+			//tags are 0.5m from center, along x axis of vehicle
+			pos.x = 0.001 * poz_coordinates[0].x - 0.5 * cos(actual_yaw);
+			pos.y = 0.001 * poz_coordinates[0].y - 0.5 * sin(actual_yaw);
+		}
 		
-	
-		coordinates_t poz_coordinates[count];
-		struct att_pos_mocap_s pos;
-		unsigned startid = 0;
-		int validcount = 0;
-		int totalerror = 0;
-
-		pos.x = 0;
-		pos.y = 0;
-		pos.z = -5;
-
-		for (int i=0; i<count; i++){
-			struct pozyx_bus_option &bus = find_bus(busid, startid);
-			startid = bus.index + 1;
-
-			if (POZYX_SUCCESS == bus.dev->doPositioning(&poz_coordinates[i], POZYX_2_5D, tag_height)){
-				if (print_result) {
-					PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[i].x, poz_coordinates[i].y, poz_coordinates[i].z);
-				}
-
-				pos_error_t poz_error;
-				if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
-					if (print_result) {
-						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-					}
-					if (i==0) {
-						position.id = bus.index;
-						position.x_pos = poz_coordinates[i].x;
-						position.y_pos = poz_coordinates[i].y;
-						position.z_pos = poz_coordinates[i].z;
-						position.x_cov = poz_error.x;
-						position.y_cov = poz_error.y;
-						position.z_cov = poz_error.z;
-						position.xy_cov = poz_error.xy;
-						position.xz_cov = poz_error.xz;
-						position.yz_cov = poz_error.yz;
-					}
-					else {
-						position.id_2 = bus.index;
-						position.x_pos_2 = poz_coordinates[i].x;
-						position.y_pos_2 = poz_coordinates[i].y;
-						position.z_pos_2 = poz_coordinates[i].z;
-						position.x_cov_2 = poz_error.x;
-						position.y_cov_2 = poz_error.y;
-						position.z_cov_2 = poz_error.z;
-						position.xy_cov_2 = poz_error.xy;
-						position.xz_cov_2 = poz_error.xz;
-						position.yz_cov_2 = poz_error.yz;						
-					}
-
-					totalerror = abs(poz_error.xy);
-					if(totalerror > err_thresholds[0]) {
-					//bad reading
-						poz_coordinates[i].x = 0;
-						poz_coordinates[i].y = 0;
-						PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);		
-					}
-					else {
-						validcount += 1;
-					}
-				}
-			}
-			pos.x += poz_coordinates[i].x;
-			pos.y += poz_coordinates[i].y;
-			if (i==0) {
-				usleep(10000);
-			}
-
-			if (count == 1) {
-				quaternion_t poz_orientation;
-				if (POZYX_SUCCESS == bus.dev->getQuaternion(&poz_orientation)){
-					if (print_result) {
-						PX4_INFO("Current orientation: %1.4f  %1.4f  %1.4f  %1.4f", (double)poz_orientation.weight, (double)poz_orientation.x, (double)poz_orientation.y, (double)poz_orientation.z);
-					}
-					//change orientation from funny vertical to NED rotate 180 degrees about z and -90 about x
-					//[q0, q1, q2, q3] >>> [-q0, -q2, -q1, q3]
-					pos.q[0] = -poz_orientation.weight;
-					pos.q[1] = -poz_orientation.y;
-					pos.q[2] = -poz_orientation.x;
-					pos.q[3] = poz_orientation.z;	
-				}						
-			}
-		}
-
-
-		if (validcount > 1) {
-			double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
-
-			if (print_result) {
-				PX4_INFO("Current yaw: %f deg.", (yaw * 180 / 3.14159));
-			}
-			matrix::Vector3f pozyx_orient(0, 0, yaw);
-			matrix::Quatf myq(1.0, 0, 0, 0);
-			myq.from_axis_angle(pozyx_orient);
-			pos.q[0] = myq(0);
-			pos.q[1] = myq(1);
-			pos.q[2] = myq(2);
-			pos.q[3] = myq(3);
-
-			float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].x),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
-			if ((sensor_distance > err_thresholds[1]) || (sensor_distance < err_thresholds[2])){
-				//sensor measurements are not consistent, checking expected distance
-				validcount = 0;
-			}
-		}	
-
-		//publish raw pozyx values regardless of validity
-		position.timestamp = hrt_absolute_time();
-		orb_publish(ORB_ID(pozyx_position),position_pub_fd, &position);
-
+		
 		//if we have valid measurements, publish to att-pos-mocap for positioning
-		if (validcount == count) {
-			pos.x /= (validcount*1000);
-			pos.y /= (-validcount*1000);
+		if (validcount > 0) {
 			pos.timestamp = hrt_absolute_time();
-			orb_advert_t pos_pub = orb_advertise(ORB_ID(att_pos_mocap), &pos);
 			orb_publish(ORB_ID(att_pos_mocap), pos_pub, &pos);
 		}
 		else {
 			if (print_result) {
 				PX4_INFO("No valid RTLS measurements");
 			}
+			pozyx_err_count += 1;
+			position.x_pos = pozyx_err_count;
+			position.x_pos_2 = pozyx_err_count;
 		}
+		//publish raw pozyx values regardless of validity
+		position.timestamp = hrt_absolute_time();
+		orb_publish(ORB_ID(pozyx_position),position_pub_fd, &position);
+
 	}
 
 	void
