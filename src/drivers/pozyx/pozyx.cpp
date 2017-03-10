@@ -54,6 +54,14 @@ static int stored_anchors_count = 0;
 static double actual_yaw = 0.0f;
 static double yaw_error = 3.0f;
 static int pozyx_err_count = 0;
+/* Publish Position Topic */
+struct pozyx_position_s position;
+//memset(&position, 0, sizeof(position));
+orb_advert_t position_pub_fd;// = orb_advertise(ORB_ID(pozyx_position), &position);
+
+struct att_pos_mocap_s pos;
+//memset(&pos, 0, sizeof(pos));
+orb_advert_t pos_pub;// = orb_advertise(ORB_ID(att_pos_mocap), &pos);
 
 enum POZYX_BUS {
 	POZYX_BUS_ALL = 0,
@@ -323,14 +331,6 @@ namespace pozyx
 	void
 	getposition(enum POZYX_BUS busid, int count, bool print_result, uint8_t type)
 	{
-		/* Publish Position Topic */
-		struct pozyx_position_s position;
-		//memset(&position, 0, sizeof(position));
-		orb_advert_t position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
-	
-		struct att_pos_mocap_s pos;
-		//memset(&pos, 0, sizeof(pos));
-		orb_advert_t pos_pub = orb_advertise(ORB_ID(att_pos_mocap), &pos);
 
 		coordinates_t poz_coordinates[count];
 
@@ -465,39 +465,47 @@ namespace pozyx
 					validcount = 0;
 				}
 				//average positions
-				pos.x = 0.5 * (poz_coordinates[0].x + poz_coordinates[1].x);
-				pos.y = 0.5 * (poz_coordinates[0].y + poz_coordinates[1].y);
+				pos.x = 0.0005 * (poz_coordinates[0].x + poz_coordinates[1].x);
+				pos.y = 0.0005 * (poz_coordinates[0].y + poz_coordinates[1].y);
 			}
 			else {
 				validcount = 0;
 			}
 		}
 		else if ((type == 1) && (validcount == 1)) { //if just measuring 1 tag, use angle to get center position
-			/* subscribe to sensor_combined topic */
-			int vehicle_att_fd = orb_subscribe(ORB_ID(vehicle_attitude));
-			/* limit the update rate to 100 Hz */
-			orb_set_interval(vehicle_att_fd, 10);
-			/* wait for update */
-			px4_pollfd_struct_t fds[1] = {};
-			fds[0].fd = vehicle_att_fd;
+			/* subscribe to vehicle attitude topic */
+			int att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
+			struct vehicle_attitude_s att;
+			memset(&att, 0, sizeof(att));
+
+			/* wakeup source(s) */
+			px4_pollfd_struct_t fds[1];
+			
+			/* pace output  */
+			fds[0].fd = att_sub;
 			fds[0].events = POLLIN;
-			int poll_ret = px4_poll(fds, 1, 100);  //wait a max of 100ms
-			if (poll_ret > 0) {
-				if (fds[0].revents & POLLIN) {
-					/* obtained data for the first file descriptor */
-					struct vehicle_attitude_s raw;
-					/* copy sensors raw data into local buffer */
-					orb_copy(ORB_ID(vehicle_attitude), vehicle_att_fd, &raw);
-					matrix::Quatf actual_orient(raw.q[0], raw.q[1], raw.q[2], raw.q[3]);
-					matrix::Vector3f actual_angles(0,0,0);
-					actual_angles = actual_orient.to_axis_angle();
-					actual_yaw = actual_angles(2);
-					//just push current attitude back
-					pos.q[0] = raw.q[0];
-					pos.q[1] = raw.q[1];
-					pos.q[2] = raw.q[2];
-					pos.q[3] = raw.q[3];
-				}
+
+			/* wait for up to 2500ms for data */
+			int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 2500);
+
+			/* timed out - periodic check for thread_should_exit, etc. */
+			if (pret == 0) {
+			} else if (pret < 0) {
+			/* this is undesirable but not much we can do - might want to flag unhappy status */
+				warn("attitude: poll error %d, %d", pret, errno);
+			} else {
+				/* copy sensors raw data into local buffer */
+				orb_copy(ORB_ID(vehicle_attitude), att_sub, &att);
+				matrix::Quatf actual_orient(att.q[0], att.q[1], att.q[2], att.q[3]);
+				matrix::Vector3f actual_angles(0,0,0);
+				actual_angles = actual_orient.to_axis_angle();
+				actual_yaw = actual_angles(2);
+				//just push current attitude back
+				pos.q[0] = att.q[0];
+				pos.q[1] = att.q[1];
+				pos.q[2] = att.q[2];
+				pos.q[3] = att.q[3];
+				PX4_INFO("actual yaw is %f", actual_yaw);
 			}
 
 			//tags are 0.5m from center, along x axis of vehicle
@@ -792,6 +800,9 @@ int
 pozyx_main(int argc, char *argv[])
 {
 
+	position_pub_fd = orb_advertise(ORB_ID(pozyx_position), &position);
+
+	pos_pub = orb_advertise(ORB_ID(att_pos_mocap), &pos);
 
 	//int ch;
 	enum POZYX_BUS busid = POZYX_BUS_ALL;

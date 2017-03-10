@@ -70,7 +70,7 @@ param set CBRK_USB_CHK 197848
 param set BAT_A_PER_V 13.033
 param set BAT_CAPACITY 20000
 param set BAT_CNT_V_CURR 0.00080566
-param set BAT_CND_V_VOLT 0.00080566
+param set BAT_CNT_V_VOLT 0.00080566
 param set BAT_N_CELLS 4
 param set BAT_V_CHARGED 3.35
 param set BAT_V_EMPTY 2.5
