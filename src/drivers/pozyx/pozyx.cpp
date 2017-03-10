@@ -42,6 +42,7 @@
 #include <systemlib/err.h>
 
 #include <drivers/drv_hrt.h>
+#include <systemlib/param/param.h>
 
 static bool thread_should_exit = false;		/**< daemon exit flag */
 static bool thread_running = false;		/**< daemon status flag */
@@ -445,6 +446,8 @@ namespace pozyx
 
 			//if we got 2 successful measurements
 			if (validcount == 2) {
+				float paramval = 0.05;
+				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
 				double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
 				yaw_error = yaw - actual_yaw;
 
@@ -473,6 +476,8 @@ namespace pozyx
 			}
 		}
 		else if ((type == 1) && (validcount == 1)) { //if just measuring 1 tag, use angle to get center position
+				float paramval = 0.0;
+				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
 			/* subscribe to vehicle attitude topic */
 			int att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
 			struct vehicle_attitude_s att;
@@ -486,10 +491,12 @@ namespace pozyx
 			fds[0].events = POLLIN;
 
 			/* wait for up to 2500ms for data */
-			int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 2500);
+			int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 250);
 
 			/* timed out - periodic check for thread_should_exit, etc. */
 			if (pret == 0) {
+				/* this means none of our providers is giving us data */
+				PX4_ERR("Attitude: Got no data");
 			} else if (pret < 0) {
 			/* this is undesirable but not much we can do - might want to flag unhappy status */
 				warn("attitude: poll error %d, %d", pret, errno);
@@ -510,7 +517,8 @@ namespace pozyx
 
 			//tags are 0.5m from center, along x axis of vehicle
 			pos.x = 0.001 * poz_coordinates[0].x - 0.5 * cos(actual_yaw);
-			pos.y = 0.001 * poz_coordinates[0].y - 0.5 * sin(actual_yaw);
+			pos.y = 0.001 * poz_coordinates[0].y + 0.5 * sin(actual_yaw);
+			orb_unsubscribe(att_sub);
 		}
 		
 		
@@ -978,6 +986,7 @@ pozyx_commands(int argc, char *argv[])
 
 		/* timed out - periodic check for thread_should_exit, etc. */
 		if (pret == 0) {
+			//no comands received. do nothing.
 		} else if (pret < 0) {
 		/* this is undesirable but not much we can do - might want to flag unhappy status */
 			warn("commander: poll error %d, %d", pret, errno);
