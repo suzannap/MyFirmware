@@ -446,7 +446,7 @@ namespace pozyx
 
 			//if we got 2 successful measurements
 			if (validcount == 2) {
-				float paramval = 0.05;
+				float paramval = 0.1;
 				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
 				double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
 				yaw_error = yaw - actual_yaw;
