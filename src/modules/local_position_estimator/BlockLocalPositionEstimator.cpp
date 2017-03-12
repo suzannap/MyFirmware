@@ -602,7 +602,7 @@ void BlockLocalPositionEstimator::correctionLogic(Vector<float, n_x> &dx)
 				  _sub_att.get().pitchspeed * _sub_att.get().pitchspeed +
 				  _sub_att.get().yawspeed * _sub_att.get().yawspeed);
 
-	if (ang_speed > 1) {
+	if (ang_speed > 0.5f) { //reduced from 1 to 0.5 for waterbees
 		dx(X_bx) = 0;
 		dx(X_by) = 0;
 		dx(X_bz) = 0;
@@ -629,6 +629,25 @@ void BlockLocalPositionEstimator::correctionLogic(Vector<float, n_x> &dx)
 	if (!_validTZ) {
 		dx(X_tz) = 0;
 	}
+
+	/*this was a bad experiment
+	//waterbees - if moved more than max velocity/accel would allow, limit estimating
+	float v;
+	param_get(param_find("MPC_XY_VEL_MAX"), &v);
+	float xy_speed = sqrtf(dx(X_x) * dx(X_x) + dx(X_y) * dx(X_y)) / getDt();
+	v *= 1.5f;
+	if (xy_speed > v) {
+		dx(X_x) = dx(X_x) * v/xy_speed;
+		dx(X_y) = dx(X_y) * v/xy_speed;
+	}
+	param_get(param_find("MPX_ACC_HOR_MAX"), &v);
+	float xy_acc = sqrtf(dx(X_vx) * dx(X_vx) + dx(X_vy) * dx(X_vy)) / getDt();
+	v *= 1.5f;
+	if (xy_acc > v) {
+		dx(X_vx) = dx(X_vx) * v/xy_acc;
+		dx(X_vy) = dx(X_vy) * v/xy_acc;
+	}
+	*/
 
 	// saturate bias
 	float bx = dx(X_bx) + _x(X_bx);

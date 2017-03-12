@@ -387,8 +387,8 @@ namespace pozyx
 				position.xz_cov = poz_error.xz;
 				position.yz_cov = poz_error.yz;
 
-				totalerror = abs(poz_error.xy);
-				if(totalerror > err_thresholds[0]) {
+				totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z);
+				if(abs(poz_error.xy) > err_thresholds[0] || totalerror < 4) {
 					//bad reading
 					PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);	
 				}
@@ -401,7 +401,7 @@ namespace pozyx
 			pozyx_err_count += 1;
 			position.x_pos = pozyx_err_count;
 		}
-		usleep(1000);
+		usleep(10000);
 
 		//only measure 2nd tag if in mode to do so and first measurement was successful
 		if ((type == 0) && (validcount == 1)) {
@@ -428,8 +428,8 @@ namespace pozyx
 					position.xz_cov_2 = poz_error.xz;
 					position.yz_cov_2 = poz_error.yz;	
 
-					totalerror = abs(poz_error.xy);
-					if(totalerror > err_thresholds[0]) {
+					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z);
+					if(abs(poz_error.xy) > err_thresholds[0] || totalerror < 4) {
 						//bad reading
 						PX4_INFO("Covariance error tag %d: %d", bus2.index, totalerror);	
 					}
@@ -442,7 +442,7 @@ namespace pozyx
 				pozyx_err_count += 1;
 				position.x_pos_2 = pozyx_err_count;
 			}
-			usleep(1000);
+			usleep(10000);
 
 			//if we got 2 successful measurements
 			if (validcount == 2) {
@@ -469,7 +469,7 @@ namespace pozyx
 				}
 				//average positions
 				pos.x = 0.0005 * (poz_coordinates[0].x + poz_coordinates[1].x);
-				pos.y = 0.0005 * (poz_coordinates[0].y + poz_coordinates[1].y);
+				pos.y = -0.0005 * (poz_coordinates[0].y + poz_coordinates[1].y);
 			}
 			else {
 				validcount = 0;
@@ -512,12 +512,14 @@ namespace pozyx
 				pos.q[1] = att.q[1];
 				pos.q[2] = att.q[2];
 				pos.q[3] = att.q[3];
-				PX4_INFO("actual yaw is %f", actual_yaw);
+				if (print_result) {
+					PX4_INFO("actual yaw is %f", actual_yaw);
+				}
 			}
 
 			//tags are 0.5m from center, along x axis of vehicle
 			pos.x = 0.001 * poz_coordinates[0].x - 0.5 * cos(actual_yaw);
-			pos.y = 0.001 * poz_coordinates[0].y + 0.5 * sin(actual_yaw);
+			pos.y = -0.001 * poz_coordinates[0].y - 0.5 * sin(actual_yaw);
 			orb_unsubscribe(att_sub);
 		}
 		
@@ -526,6 +528,7 @@ namespace pozyx
 		if (validcount > 0) {
 			pos.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(att_pos_mocap), pos_pub, &pos);
+			pozyx_err_count = 0;
 		}
 		else {
 			if (print_result) {
@@ -550,8 +553,9 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			uint8_t max_anchors = 134; //6 && auto selection bit
+			uint8_t max_anchors = 136; //8 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
+				usleep(100);
 				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
 					PX4_INFO("Auto anchor selection set. Maximum %d anchors used.", max_anchors);
 				}		
