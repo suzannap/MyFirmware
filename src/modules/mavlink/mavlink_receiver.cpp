@@ -279,6 +279,27 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_logging_ack(msg);
 		break;
 
+	case MAVLINK_MSG_ID_POZYX_GETPOSITION:	
+		mavlink_pozyx_getposition_t getpos_mavlink;
+		mavlink_msg_pozyx_getposition_decode(msg, &getpos_mavlink);
+		//just trigger the appropriate position:
+		if (getpos_mavlink.id > 0){
+			//PX4_INFO("got position command type %d", getpos_mavlink.id);
+			mavlink_command_long_t cmd_mavlink;
+			cmd_mavlink.target_system = mavlink_system.sysid;
+			cmd_mavlink.target_component = mavlink_system.compid;
+			cmd_mavlink.command = 31014; //MAV_CMD_POZYX_GETPOSITION;
+			cmd_mavlink.param1 = getpos_mavlink.id;
+			mavlink_message_t cmd_msg;
+			mavlink_msg_command_long_encode(250, 1, &cmd_msg, &cmd_mavlink);
+			if (_mavlink->accepting_commands()) {
+				handle_message_command_long(&cmd_msg);
+			}
+
+		}
+		break;
+
+
 	default:
 		break;
 	}

@@ -404,7 +404,7 @@ namespace pozyx
 		usleep(10000);
 
 		//only measure 2nd tag if in mode to do so and first measurement was successful
-		if ((type == 0) && (validcount == 1)) {
+		if ((type == 2) && (validcount == 1)) {
 			struct pozyx_bus_option &bus2 = find_bus(busid, startid);
 
 			if (POZYX_SUCCESS == bus2.dev->doPositioning(&poz_coordinates[1], POZYX_2_5D, tag_height)){
@@ -476,8 +476,8 @@ namespace pozyx
 			}
 		}
 		else if ((type == 1) && (validcount == 1)) { //if just measuring 1 tag, use angle to get center position
-				float paramval = 0.0;
-				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
+			float paramval = 0.0;
+			param_set(param_find("ATT_W_EXT_HDG"), &paramval);
 			/* subscribe to vehicle attitude topic */
 			int att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
 			struct vehicle_attitude_s att;
@@ -1026,7 +1026,9 @@ pozyx_commands(int argc, char *argv[])
 			}
 			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
 				uint8_t type = static_cast<int>(cmd.param1);
-				pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
+				if (type > 0 && type < 3){
+					pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
+				}
 			}
 			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
 				pozyx::clearanchors(POZYX_BUS_ALL, 2);
