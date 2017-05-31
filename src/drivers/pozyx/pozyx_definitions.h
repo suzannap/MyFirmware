@@ -34,7 +34,7 @@
 #define POZYX_I2C_ADDRESS        0x4B
 
 /* Begin auto generated defines */ 
-/* POZYX REGISTERS firmware version v1.0 */ 
+/* POZYX REGISTERS firmware version v1.1 */ 
 
 /* Status registers */
 
@@ -50,6 +50,7 @@
 
 #define POZYX_INT_MASK          0x10   /* Indicates which interrupts are enabled. */
 #define POZYX_INT_CONFIG        0x11   /* Configure the interrupt pin */
+#define POZYX_POS_FILTER        0x14   /* Configure any additional positioning filter */
 #define POZYX_CONFIG_LEDS       0x15   /* Configure the LEDs */
 #define POZYX_POS_ALG         0x16   /* Algorithm used for positioning */
 #define POZYX_POS_NUM_ANCHORS       0x17   /* Configure the number of anchors and selection procedure */
@@ -60,6 +61,7 @@
 #define POZYX_UWB_PLEN          0x1E   /* Configure the UWB preamble length.  */
 #define POZYX_UWB_GAIN          0x1F   /* Configure the power gain for the UWB transmitter */
 #define POZYX_UWB_XTALTRIM        0x20   /* Trimming value for the uwb crystal. */
+#define POZYX_RANGE_PROTOCOL        0x21   /* The ranging protocol */
 #define POZYX_OPERATION_MODE        0x22   /* Configure the mode of operation of the pozyx device */
 #define POZYX_SENSORS_MODE        0x23   /* Configure the mode of operation of the sensors */
 #define POZYX_CONFIG_GPIO1        0x27   /* Configure GPIO pin 1. */
@@ -81,6 +83,7 @@
 
 /* Sensor data */
 
+#define POZYX_MAX_LIN_ACC       0x4E   /* Maximum linear acceleration */
 #define POZYX_PRESSURE          0x50   /* Pressure data */
 #define POZYX_ACCEL_X         0x54   /* Accelerometer data (in mg) */
 #define POZYX_ACCEL_Y         0x56   /*  */
@@ -145,11 +148,12 @@
 
 /* Macro's to test if registers are readable/writable */
 
-#define IS_REG_READABLE(x)       (((((x)<0x7)) || (((x)>=0x10)&&((x)<0x12)) || (((x)>=0x15)&&((x)<0x21)) || (((x)>=0x22)&&((x)<0x24)) || (((x)>=0x27)&&((x)<0x2b)) || (((x)>=0x30)&&((x)<0x48)) || (((x)>=0x50)&&((x)<0x89)))?1:0) 
-#define IS_REG_WRITABLE(x)       (((((x)>=0x10)&&((x)<0x12)) || (((x)>=0x15)&&((x)<0x21)) || (((x)>=0x22)&&((x)<0x24)) || (((x)>=0x27)&&((x)<0x2b)) || (((x)>=0x30)&&((x)<0x3c)) || (((x)>=0x85)&&((x)<0x89)))?1:0) 
+#define IS_REG_READABLE(x)       (((((x)<0x7)) || (((x)>=0x10)&&((x)<0x12)) || (((x)>=0x14)&&((x)<0x24)) || (((x)>=0x27)&&((x)<0x2b)) || (((x)>=0x30)&&((x)<0x48)) || (((x)>=0x4e)&&((x)<0x89)))?1:0) 
+#define IS_REG_WRITABLE(x)       (((((x)>=0x10)&&((x)<0x12)) || (((x)>=0x14)&&((x)<0x24)) || (((x)>=0x27)&&((x)<0x2b)) || (((x)>=0x30)&&((x)<0x3c)) || (((x)>=0x85)&&((x)<0x89)))?1:0) 
 #define IS_FUNCTIONCALL(x)       (((((x)>=0xb0)&&((x)<0xbc)) || (((x)>=0xc0)&&((x)<0xc9)))?1:0) 
 
 /* End of auto generated defines */ 
+
 
 /* Bit mask for POZYX_ST_RESULT */
 #define POZYX_ST_RESULT_ACC       0x01
@@ -177,12 +181,12 @@
 
 /* Bit mask for POZYX_POS_ALG */
 #define POZYX_POS_ALG_UWB_ONLY      0x00
-#define POZYX_POS_ALG_TRACKING      0x01
-#define POZYX_POS_ALG_LS        0x02
+#define POZYX_POS_ALG_TRACKING      0x04 
+#define POZYX_POS_ALG_LS        0x00 //deprecated so default to UWB only
 
 /* Bit mask for POZYX_RANGE_PROTOCOL */
-#define POZYX_RANGE_PROTOCOL_SDS_TWR  0x00
-#define POZYX_RANGE_PROTOCOL_TWR    0x01
+#define POZYX_RANGE_PROTOCOL_PRECISION  0x00
+#define POZYX_RANGE_PROTOCOL_FAST    0x01
 #define POZYX_RANGE_PROTOCOL_TEST   0x02
 
 /* Bit mask for POZYX_LED_CTRL */

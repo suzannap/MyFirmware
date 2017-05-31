@@ -1074,7 +1074,37 @@ public:
     */
     int setUpdateInterval(uint16_t ms, uint16_t remote_id = NULL);
   
-    
+    /**
+    * Obtain the configured ranging protocol.
+    * This function obtains the configured ranging protocol by reading from the reg:POZYX_RANGE_PROTOCOL register.
+    *
+    *   @param protocol pointer to the variable holding the ranging protocol used when ranging.
+    *   Possible values for the ranging protocol are POZYX_RANGE_PROTOCOL_FAST and POZYX_RANGE_PROTOCOL_PRECISION.
+    *   @param remote_id optional parameter that determines the remote device to be used
+    *
+    * @retval #POZYX_SUCCESS success.
+    * @retval #POZYX_FAILURE function failed.
+    * @retval #POZYX_TIMEOUT function timed out, no response received.
+    *
+    * @see doRanging, setRangingProtocol
+    */
+    int getRangingProtocol(uint8_t *protocol, uint16_t remote_id = NULL);
+
+    /**
+    * Configure the ranging protocol.
+    * This function configures the ranging protocol by writing to the reg:POZYX_RANGE_PROTOCOL register.
+    *
+    *   @param protocol Ranging protocol used when ranging.
+    *   Possible values for the ranging protocol are POZYX_RANGE_PROTOCOL_FAST and POZYX_RANGE_PROTOCOL_PRECISION.
+    *   @param remote_id optional parameter that determines the remote device to be used
+    *
+    * @retval #POZYX_SUCCESS success.
+    * @retval #POZYX_FAILURE function failed.
+    * @retval #POZYX_TIMEOUT function timed out, no response received.
+    *
+    * @see doRanging, getRangingProtocol
+    */
+    int setRangingProtocol(uint8_t protocol, uint16_t remote_id = NULL);
 
     /**
     * Obtain the configured positioning algorithm.
@@ -1252,6 +1282,21 @@ public:
     */
     int setSensorMode(uint8_t sensor_mode, uint16_t remote_id = NULL);
 
+
+    /**
+    * Obtain all raw sensor data at once as it's stored in the registers.
+    * This functions reads out the pressure, acceleration, magnetic field strength, angular velocity, orientation in Euler angles, the orientation as a quaternion,
+    * the linear acceleration, the gravity vector and temperature.
+    *
+    *   @param sensor_raw: reference to the sensor_raw object
+    *   @param remote_id: optional parameter that determines the remote device to be used
+    *
+    * @retval #POZYX_SUCCESS success.
+    * @retval #POZYX_FAILURE function failed.
+    * @retval #POZYX_TIMEOUT function timed out, no response received.
+    */
+    int getRawSensorData(sensor_raw_t *sensor_raw, uint16_t remote_id = NULL);
+
     /**
     * Obtain all sensor data at once.
     * This functions reads out the pressure, acceleration, magnetic field strength, angular velocity, orientation in Euler angles, the orientation as a quaternion, 
@@ -1279,6 +1324,19 @@ public:
     */
     int getPressure_Pa(float32_t *pressure, uint16_t remote_id = NULL);
 
+    /**
+    * Obtain the max linear acceleration
+    * This registers functions similarly to the interrupt and error registers in that it clears
+    * the register's value upon reading. This is the max linear acceleration since the last read.
+    *
+    *   @param max_lin_acc: pointer to a variable that will hold the max linear acceleration
+    *   @param remote_id: optional parameter that determines the remote device to be used
+    *
+    * @retval #POZYX_SUCCESS success.
+    * @retval #POZYX_FAILURE function failed.
+    * @retval #POZYX_TIMEOUT function timed out, no response received.
+    */
+    int getMaxLinearAcceleration(uint16_t *max_lin_acc, uint16_t remote_id = NULL);
 
     /**
     * Obtain the 3D acceleration vector in mg. 

@@ -149,6 +149,34 @@ int PozyxClass::setUpdateInterval(uint16_t ms, uint16_t remote_id)
   return status;
 }
 
+int PozyxClass::setRangingProtocol(uint8_t protocol, uint16_t remote_id){
+  assert(protocol <= 2);
+
+  int status;
+  if(remote_id == NULL){
+    status = regWrite(POZYX_RANGE_PROTOCOL, &protocol, 1);
+    usleep(POZYX_DELAY_LOCAL_WRITE*1000);
+  }
+  else{
+    status = remoteRegWrite(remote_id, POZYX_RANGE_PROTOCOL, &protocol, 1);
+    usleep(POZYX_DELAY_REMOTE_WRITE*1000);
+  }
+
+  return status;
+}
+
+int PozyxClass::getRangingProtocol(uint8_t *protocol, uint16_t remote_id){
+    assert(protocol != NULL);
+
+    if(remote_id == NULL){
+      return regRead(POZYX_RANGE_PROTOCOL, protocol, 1);
+    }
+    else{
+      return remoteRegRead(remote_id, POZYX_RANGE_PROTOCOL, protocol, 1);
+    }
+}
+
+
 int PozyxClass::getConfigModeGPIO(int gpio_num, uint8_t *mode, uint16_t remote_id){
   assert(gpio_num > 0);
   assert(gpio_num <= 4);
@@ -262,7 +290,7 @@ int PozyxClass::getPositionDimension(uint8_t *dimension, uint16_t remote_id)
 
 int PozyxClass::setPositionAlgorithm(int algorithm, int dimension, uint16_t remote_id)
 {
-  assert( (algorithm == POZYX_POS_ALG_UWB_ONLY ) || (algorithm == POZYX_POS_ALG_LS) );
+  assert( (algorithm == POZYX_POS_ALG_UWB_ONLY ) || (algorithm == POZYX_POS_ALG_TRACKING) );
   assert( (dimension == POZYX_3D ) || (dimension == POZYX_2D) || (dimension == POZYX_2_5D) );
 
   int status;
@@ -609,6 +637,18 @@ int PozyxClass::getPositionError(pos_error_t *pos_error, uint16_t remote_id)
  * Function regarding the sensor data
  */
 
+int PozyxClass::getRawSensorData(sensor_raw_t *sensor_raw, uint16_t remote_id)
+{
+  assert(sensor_raw != NULL);
+
+  if(remote_id == NULL){
+    return regRead(POZYX_PRESSURE, (uint8_t *)sensor_raw, sizeof(sensor_raw_t));
+  }
+  else{
+    return remoteRegRead(remote_id, POZYX_PRESSURE, (uint8_t *)sensor_raw, sizeof(sensor_raw_t));
+  }
+}
+
 int PozyxClass::getAllSensorData(sensor_data_t *sensor_data, uint16_t remote_id)
 {
   assert(sensor_data != NULL);
@@ -702,6 +742,17 @@ int PozyxClass::getAcceleration_mg(acceleration_t *acceleration, uint16_t remote
   acceleration->z = raw_data[2] / POZYX_ACCEL_DIV_MG;
 
   return status;
+}
+
+int PozyxClass::getMaxLinearAcceleration(uint16_t *max_lin_acc, uint16_t remote_id){
+  assert(max_lin_acc != NULL);
+
+  if(remote_id == NULL){
+    return regRead(POZYX_MAX_LIN_ACC, (uint8_t *) max_lin_acc, 2);
+  }
+  else{
+    return remoteRegRead(remote_id, POZYX_MAX_LIN_ACC, (uint8_t *) max_lin_acc, 2);
+  }
 }
 
 int PozyxClass::getMagnetic_uT(magnetic_t *magnetic, uint16_t remote_id)
@@ -1108,7 +1159,7 @@ int PozyxClass::doRemoteRanging(uint16_t device_from, uint16_t device_to, device
 int PozyxClass::doPositioning(coordinates_t *position, uint8_t dimension, int32_t height, uint8_t algorithm)
 {
   assert(position != NULL);
-  assert( (algorithm == POZYX_POS_ALG_UWB_ONLY ) || (algorithm == POZYX_POS_ALG_LS) || (algorithm == POZYX_POS_ALG_TRACKING) );
+  assert( (algorithm == POZYX_POS_ALG_UWB_ONLY ) || (algorithm == POZYX_POS_ALG_TRACKING) );
   assert( (dimension == POZYX_3D ) || (dimension == POZYX_2D) || (dimension == POZYX_2_5D) );
   
   int status;
@@ -1149,7 +1200,7 @@ int PozyxClass::doRemotePositioning(uint16_t remote_id, coordinates_t *coordinat
 {
   assert(remote_id != 0);
   assert(coordinates != NULL);
-  assert( (algorithm == POZYX_POS_ALG_UWB_ONLY ) || (algorithm == POZYX_POS_ALG_LS) );
+  assert( (algorithm == POZYX_POS_ALG_UWB_ONLY ) || (algorithm == POZYX_POS_ALG_TRACKING) );
   assert( (dimension == POZYX_3D ) || (dimension == POZYX_2D) || (dimension == POZYX_2_5D) );
   
 
