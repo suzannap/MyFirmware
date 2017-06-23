@@ -337,7 +337,7 @@ namespace pozyx
 
 		unsigned startid = 0;
 		int validcount = 0;
-		int totalerror = 0;
+		//int totalerror = 0;
 
 		pos.x = 0;
 		pos.y = 0;
@@ -370,17 +370,17 @@ namespace pozyx
 			if (print_result) {
 				PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[0].x, poz_coordinates[0].y, poz_coordinates[0].z);
 			}
-			pos_error_t poz_error;
+			/*pos_error_t poz_error;
 			usleep(500);
 			if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
 				if (print_result) {
 					PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-				}
+				}*/
 				position.id = bus.index;
 				position.x_pos = poz_coordinates[0].x;
 				position.y_pos = poz_coordinates[0].y;
 				position.z_pos = poz_coordinates[0].z;
-				position.x_cov = poz_error.x;
+				/*position.x_cov = poz_error.x;
 				position.y_cov = poz_error.y;
 				position.z_cov = poz_error.z;
 				position.xy_cov = poz_error.xy;
@@ -388,40 +388,40 @@ namespace pozyx
 				position.yz_cov = poz_error.yz;
 
 				totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z);
-				if(abs(poz_error.xy) > err_thresholds[0] || totalerror < 4) {
+				if(abs(poz_error.xy) > err_thresholds[0] || totalerror < -4) {
 					//bad reading
 					PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);	
 				}
-				else {
+				else {*/
 					validcount += 1;
-				}			
-			}			
+				//}			
+			//}			
 		}
 		else {			
 			pozyx_err_count += 1;
-			position.x_pos = pozyx_err_count;
+			//position.x_pos = pozyx_err_count;
 		}
-		usleep(10000);
+		//usleep(10000);
 
 		//only measure 2nd tag if in mode to do so and first measurement was successful
-		if ((type == 2) && (validcount == 1)) {
+		if ((type == 2) && (validcount >-1)) {
 			struct pozyx_bus_option &bus2 = find_bus(busid, startid);
 
 			if (POZYX_SUCCESS == bus2.dev->doPositioning(&poz_coordinates[1], POZYX_2_5D, tag_height)){
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus2.index, poz_coordinates[1].x, poz_coordinates[1].y, poz_coordinates[1].z);
 				}
-				pos_error_t poz_error;
+				/*pos_error_t poz_error;
 				usleep(500);
 				if (POZYX_SUCCESS == bus2.dev->getPositionError(&poz_error)){
 					if (print_result) {
 						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-					}
+					}*/
 					position.id_2 = bus2.index;
 					position.x_pos_2 = poz_coordinates[1].x;
 					position.y_pos_2 = poz_coordinates[1].y;
 					position.z_pos_2 = poz_coordinates[1].z;
-					position.x_cov_2 = poz_error.x;
+					/*position.x_cov_2 = poz_error.x;
 					position.y_cov_2 = poz_error.y;
 					position.z_cov_2 = poz_error.z;
 					position.xy_cov_2 = poz_error.xy;
@@ -429,20 +429,20 @@ namespace pozyx
 					position.yz_cov_2 = poz_error.yz;	
 
 					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z);
-					if(abs(poz_error.xy) > err_thresholds[0] || totalerror < 4) {
+					if(abs(poz_error.xy) > err_thresholds[0] || totalerror < -4) {
 						//bad reading
 						PX4_INFO("Covariance error tag %d: %d", bus2.index, totalerror);	
 					}
-					else {
+					else {*/
 						validcount += 1;
-					}			
-				}			
+					//}			
+				//}			
 			}
 			else {				
 				pozyx_err_count += 1;
-				position.x_pos_2 = pozyx_err_count;
+				//position.x_pos_2 = pozyx_err_count;
 			}
-			usleep(10000);
+			//usleep(10000);
 
 			//if we got 2 successful measurements
 			if (validcount == 2) {
@@ -535,8 +535,8 @@ namespace pozyx
 				PX4_INFO("No valid RTLS measurements");
 			}
 			pozyx_err_count += 1;
-			position.x_pos = pozyx_err_count;
-			position.x_pos_2 = pozyx_err_count;
+			//position.x_pos = pozyx_err_count;
+			//position.x_pos_2 = pozyx_err_count;
 		}
 		//publish raw pozyx values regardless of validity
 		position.timestamp = hrt_absolute_time();
@@ -553,12 +553,15 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			uint8_t max_anchors = 136; //8 && auto selection bit
+			uint8_t max_anchors = 143; //15 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
 				usleep(100);
 				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
 					PX4_INFO("Auto anchor selection set. Maximum %d anchors used.", max_anchors);
 				}		
+			}
+			if (bus.dev->setRangingProtocol(POZYX_RANGE_PROTOCOL_FAST) == POZYX_SUCCESS) {
+				usleep(100);
 			}
 
 		}
