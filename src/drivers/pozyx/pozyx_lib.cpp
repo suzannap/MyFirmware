@@ -1164,6 +1164,7 @@ int PozyxClass::doPositioning(coordinates_t *position, uint8_t dimension, int32_
   
   int status;
 
+  /*no need to constantly set these
   // set dimension and algorithm
   uint8_t alg_options = (dimension<<4) | algorithm;
   status = regWrite(POZYX_POS_ALG, &alg_options, 1);
@@ -1172,13 +1173,15 @@ int PozyxClass::doPositioning(coordinates_t *position, uint8_t dimension, int32_
   if(dimension == POZYX_2_5D) {
     status = regWrite(POZYX_POS_Z, (uint8_t*)&height, sizeof(int32_t));
   }
+  */
   
   // trigger positioning
   uint8_t int_status = 0;
   regRead(POZYX_INT_STATUS, &int_status, 1);      // first clear out the interrupt status register by reading from it 
   status = regFunction(POZYX_DO_POSITIONING, NULL, 0, NULL, 0); 
-  if (status != POZYX_SUCCESS )
+  if (status != POZYX_SUCCESS ) {
     return POZYX_FAILURE;
+  }
 
   // now wait for the positioning to finish or generate an error  
   if (waitForFlag_safe(POZYX_INT_STATUS_POS | POZYX_INT_STATUS_ERR, 2*POZYX_DELAY_INTERRUPT, &int_status)){

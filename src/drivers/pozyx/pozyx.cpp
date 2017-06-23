@@ -283,37 +283,6 @@ namespace pozyx
 
 			}
 
-/*
-			//test a function call by blinking LED3
-			uint8_t funcbuf[100];
-			funcbuf[0] = 0x44;
-
-			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
-			if (funcbuf[0] != 1) {
-				//err(1, "Function test failed");
-				if (i==0){	
-					status.result += 8;
-				}
-				else {
-					status.result_2 +=8;
-				}
-			}
-			PX4_INFO("LED3 turned On... ");
-			sleep(2);
-			funcbuf[0] = 0x40;
-			bus.dev->regFunction(POZYX_LED_CTRL, (uint8_t *)&funcbuf[0], 1, (uint8_t *)&funcbuf[0], 1);
-			if (funcbuf[0] != 1) {
-				//err(1, "Function test failed");
-				if (i==0){	
-					status.result += 16;
-				}
-				else {
-					status.result_2 +=16;
-				}
-			}
-			PX4_INFO("LED3 turned Off");
-*/
-
 			PX4_INFO("Tag %d PASS", bus.index);
 
 			status.timestamp = hrt_absolute_time();
@@ -370,77 +339,35 @@ namespace pozyx
 			if (print_result) {
 				PX4_INFO("Current position tag %d: %d   %d   %d", bus.index, poz_coordinates[0].x, poz_coordinates[0].y, poz_coordinates[0].z);
 			}
-			/*pos_error_t poz_error;
-			usleep(500);
-			if (POZYX_SUCCESS == bus.dev->getPositionError(&poz_error)){
-				if (print_result) {
-					PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-				}*/
-				position.id = bus.index;
-				position.x_pos = poz_coordinates[0].x;
-				position.y_pos = poz_coordinates[0].y;
-				position.z_pos = poz_coordinates[0].z;
-				/*position.x_cov = poz_error.x;
-				position.y_cov = poz_error.y;
-				position.z_cov = poz_error.z;
-				position.xy_cov = poz_error.xy;
-				position.xz_cov = poz_error.xz;
-				position.yz_cov = poz_error.yz;
-
-				totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z);
-				if(abs(poz_error.xy) > err_thresholds[0] || totalerror < -4) {
-					//bad reading
-					PX4_INFO("Covariance error tag %d: %d", bus.index, totalerror);	
-				}
-				else {*/
-					validcount += 1;
-				//}			
-			//}			
+			position.id = bus.index;
+			position.x_pos = poz_coordinates[0].x;
+			position.y_pos = poz_coordinates[0].y;
+			position.z_pos = poz_coordinates[0].z;
+			
+			validcount += 1;
 		}
 		else {			
 			pozyx_err_count += 1;
-			//position.x_pos = pozyx_err_count;
 		}
 		//usleep(10000);
 
 		//only measure 2nd tag if in mode to do so and first measurement was successful
-		if ((type == 2) && (validcount >-1)) {
+		if ((type == 2) && (validcount == 1)) {
 			struct pozyx_bus_option &bus2 = find_bus(busid, startid);
 
 			if (POZYX_SUCCESS == bus2.dev->doPositioning(&poz_coordinates[1], POZYX_2_5D, tag_height)){
 				if (print_result) {
 					PX4_INFO("Current position tag %d: %d   %d   %d", bus2.index, poz_coordinates[1].x, poz_coordinates[1].y, poz_coordinates[1].z);
 				}
-				/*pos_error_t poz_error;
-				usleep(500);
-				if (POZYX_SUCCESS == bus2.dev->getPositionError(&poz_error)){
-					if (print_result) {
-						PX4_INFO("Position covariance: x(%d) y(%d) z(%d) xy(%d) xz(%d) yz(%d)", poz_error.x, poz_error.y, poz_error.z, poz_error.xy, poz_error.xz, poz_error.yz);
-					}*/
-					position.id_2 = bus2.index;
-					position.x_pos_2 = poz_coordinates[1].x;
-					position.y_pos_2 = poz_coordinates[1].y;
-					position.z_pos_2 = poz_coordinates[1].z;
-					/*position.x_cov_2 = poz_error.x;
-					position.y_cov_2 = poz_error.y;
-					position.z_cov_2 = poz_error.z;
-					position.xy_cov_2 = poz_error.xy;
-					position.xz_cov_2 = poz_error.xz;
-					position.yz_cov_2 = poz_error.yz;	
+				position.id_2 = bus2.index;
+				position.x_pos_2 = poz_coordinates[1].x;
+				position.y_pos_2 = poz_coordinates[1].y;
+				position.z_pos_2 = poz_coordinates[1].z;
 
-					totalerror = abs(poz_error.x) + abs(poz_error.y) + abs(poz_error.z);
-					if(abs(poz_error.xy) > err_thresholds[0] || totalerror < -4) {
-						//bad reading
-						PX4_INFO("Covariance error tag %d: %d", bus2.index, totalerror);	
-					}
-					else {*/
-						validcount += 1;
-					//}			
-				//}			
+				validcount += 1;
 			}
 			else {				
 				pozyx_err_count += 1;
-				//position.x_pos_2 = pozyx_err_count;
 			}
 			//usleep(10000);
 
@@ -535,8 +462,6 @@ namespace pozyx
 				PX4_INFO("No valid RTLS measurements");
 			}
 			pozyx_err_count += 1;
-			//position.x_pos = pozyx_err_count;
-			//position.x_pos_2 = pozyx_err_count;
 		}
 		//publish raw pozyx values regardless of validity
 		position.timestamp = hrt_absolute_time();
@@ -561,6 +486,9 @@ namespace pozyx
 				}		
 			}
 			if (bus.dev->setRangingProtocol(POZYX_RANGE_PROTOCOL_FAST) == POZYX_SUCCESS) {
+				usleep(100);
+			}
+			if (bus.dev->setPositionAlgorithm(POZYX_POS_ALG_UWB_ONLY, POZYX_2_5D) == POZYX_SUCCESS) {
 				usleep(100);
 			}
 
@@ -1057,6 +985,8 @@ pozyx_commands(int argc, char *argv[])
 				uint8_t plen = static_cast<int>(cmd.param4);
 				float gain_db = cmd.param5/2.0;
 				uint16_t target = static_cast<int>(cmd.param6);
+
+				pozyx::config(POZYX_BUS_ALL, 2);
 				pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db, target);
 				pozyx::getuwb(POZYX_BUS_ALL, 2);
 			}

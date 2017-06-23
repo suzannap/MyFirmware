@@ -968,7 +968,7 @@ void BlockLocalPositionEstimator::predict()
 		_R_att = matrix::Dcm<float>(q);
 		Vector3f a(_sub_sensor.get().accelerometer_m_s2);
 
-		//correct for non-centered IMU location:
+		//waterbee correct for non-centered IMU location:
 		float yawspeed_current = _sub_att.get().yawspeed;
 		float pitchspeed_current = _sub_att.get().pitchspeed;
 		float a_c = -r_x * (yawspeed_current * yawspeed_current + pitchspeed_current * pitchspeed_current);// ; //centripetal acceleration
