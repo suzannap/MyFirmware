@@ -204,6 +204,7 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;	
 
+			/*testing against i2c crashing
 			const char *path = bus.devpath;
 			int fd = px4_open(path, O_RDONLY);
 			if (i==0){	
@@ -223,6 +224,7 @@ namespace pozyx
 					status.result_2 +=1;
 				}
 			}
+			*/
 		
 			//Get Tag Index
 			if (i==0){
@@ -280,7 +282,6 @@ namespace pozyx
 				else {
 					status.error_code_2 = err_code;
 				}
-
 			}
 
 			PX4_INFO("Tag %d PASS", bus.index);
@@ -480,16 +481,16 @@ namespace pozyx
 
 			uint8_t max_anchors = 143; //15 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
-				usleep(100);
+				usleep(200);
 				if (bus.dev->regRead(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
 					PX4_INFO("Auto anchor selection set. Maximum %d anchors used.", max_anchors);
 				}		
 			}
 			if (bus.dev->setRangingProtocol(POZYX_RANGE_PROTOCOL_FAST) == POZYX_SUCCESS) {
-				usleep(100);
+				usleep(200);
 			}
 			if (bus.dev->setPositionAlgorithm(POZYX_POS_ALG_UWB_ONLY, POZYX_2_5D) == POZYX_SUCCESS) {
-				usleep(100);
+				usleep(200);
 			}
 
 		}
@@ -512,9 +513,12 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 			if (bus.dev->addDevice(poz_anchor) == POZYX_SUCCESS){
+				/*
 				if (bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS) == POZYX_SUCCESS) {
 					PX4_INFO("Anchor 0x%x added to tag %d", network_id, bus.index);
 				}
+				*/
+				usleep(500);
 				uint8_t device_list_size;
 				if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
 					anchor.anchor_ct = device_list_size;
@@ -552,10 +556,13 @@ namespace pozyx
 			startid = bus.index + 1;
 
 			if (bus.dev->clearDevices() == POZYX_SUCCESS){
+				/*
 				if (bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS) == POZYX_SUCCESS) {
 					PX4_INFO("All anchors cleared from tag %d", bus.index);
 				}
+				*/
 			}
+			usleep(500);
 			uint8_t device_list_size;
 			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
 				anchor.anchor_ct = device_list_size;
@@ -943,7 +950,7 @@ pozyx_commands(int argc, char *argv[])
 				//This needs redesigned, since the thread must be running for this to happen
 				if (thread_running) {
 					warnx("\trunning\n");
-					status.status = 1;
+					status.status += 1;
 				} else {
 					warnx("\tnot started\n");
 					status.status = 0;
