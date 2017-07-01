@@ -979,7 +979,7 @@ void BlockLocalPositionEstimator::predict()
 		_u = _R_att * a;
 		_u(U_az) += 9.81f; // add g
 
-		_u = 0.25f * _u; //scale down accelerometer contribution for waterbees
+		_u = 0.1f * _u; //scale down accelerometer contribution for waterbees
 
 	} else {
 		_u = Vector3f(0, 0, 0);

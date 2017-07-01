@@ -763,7 +763,7 @@ pozyx_main(int argc, char *argv[])
 	//start/load driver and begin cycles
 	if (!strcmp(verb, "start")) {
 		count = pozyx::start(busid);
-		if (count > 0) {
+		if (count >= 0) {
 			pozyx::config(busid, count);
 
 			if (thread_running) {
@@ -921,90 +921,103 @@ pozyx_commands(int argc, char *argv[])
 	fds[0].fd = cmd_sub;
 	fds[0].events = POLLIN;
 
-	while (!thread_should_exit) {
-		usleep(100);
-		/* wait for up to 2500ms for data */
-		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 2500);
 
-		/* timed out - periodic check for thread_should_exit, etc. */
-		if (pret == 0) {
-			//no comands received. do nothing.
-		} else if (pret < 0) {
-		/* this is undesirable but not much we can do - might want to flag unhappy status */
-			warn("commander: poll error %d, %d", pret, errno);
-			continue;
-		} else {
+	if (count < 2) {
+		while (!thread_should_exit) {
+			//send out bad status every 500ms. System will require reboot.
+			pozyx::test(POZYX_BUS_ALL, count);
+			status.status = 200 + count;
+			status.timestamp = hrt_absolute_time();
+			orb_publish(ORB_ID(pozyx_status),status_pub_fd,&status);
+			usleep(500000);
+		}
+	}
+	else if (count == 2){
+		while (!thread_should_exit) {
+			usleep(100);
+			/* wait for up to 2500ms for data */
+			int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 2500);
 
-			/* if we reach here, we have a valid command */
-			orb_copy(ORB_ID(vehicle_command), cmd_sub, &cmd);
+			/* timed out - periodic check for thread_should_exit, etc. */
+			if (pret == 0) {
+				//no comands received. do nothing.
+			} else if (pret < 0) {
+			/* this is undesirable but not much we can do - might want to flag unhappy status */
+				warn("commander: poll error %d, %d", pret, errno);
+				continue;
+			} else {
 
-			/* handle relevant commands */
+				/* if we reach here, we have a valid command */
+				orb_copy(ORB_ID(vehicle_command), cmd_sub, &cmd);
 
-			if (cmd.command == MAV_CMD_POZYX_START) {
-				//This command is extraneous since the daemon is already running.
-			}
-			if (cmd.command == MAV_CMD_POZYX_STOP) {
-				thread_should_exit = true;
-			}
-			if (cmd.command == MAV_CMD_POZYX_GETSTATUS) {
-				//This needs redesigned, since the thread must be running for this to happen
-				if (thread_running) {
-					warnx("\trunning\n");
-					status.status += 1;
-				} else {
-					warnx("\tnot started\n");
-					status.status = 0;
+				/* handle relevant commands */
+
+				if (cmd.command == MAV_CMD_POZYX_START) {
+					//This command is extraneous since the daemon is already running.
 				}
-				status.timestamp = hrt_absolute_time();
-				orb_publish(ORB_ID(pozyx_status),status_pub_fd,&status);
-
-			}
-			if (cmd.command == MAV_CMD_POZYX_GETTAGSTATUS) {
-				pozyx::test(POZYX_BUS_ALL, 2);
-			}
-			if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
-				uint8_t type = static_cast<int>(cmd.param1);
-				if (type > 0 && type < 3){
-					pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
+				if (cmd.command == MAV_CMD_POZYX_STOP) {
+					thread_should_exit = true;
 				}
-			}
-			if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
-				pozyx::clearanchors(POZYX_BUS_ALL, 2);
-			}
-			if (cmd.command == MAV_CMD_POZYX_ADDANCHOR) {
-				//uint8_t id = static_cast<int>(cmd.param1);
-				uint16_t anchor_id = static_cast<int>(cmd.param2);
-				uint32_t x = static_cast<int>(cmd.param3);
-				uint32_t y = static_cast<int>(cmd.param4);
-				uint32_t z = static_cast<int>(cmd.param5);
-				pozyx::addanchor(POZYX_BUS_ALL, 2, anchor_id, x, y, z);
-			}
-			if (cmd.command == MAV_CMD_POZYX_GETANCHORS) {
-				pozyx::getanchors(POZYX_BUS_ALL, 2);
-			}
-			if (cmd.command == MAV_CMD_POZYX_GETUWB) {
-				pozyx::getuwb(POZYX_BUS_ALL, 2);
-			}
-			if (cmd.command == MAV_CMD_POZYX_SETUWB) {
-				uint8_t channel = static_cast<int>(cmd.param1);
-				uint8_t bitrate = static_cast<int>(cmd.param2);
-				uint8_t prf = static_cast<int>(cmd.param3);
-				uint8_t plen = static_cast<int>(cmd.param4);
-				float gain_db = cmd.param5/2.0;
-				uint16_t target = static_cast<int>(cmd.param6);
+				if (cmd.command == MAV_CMD_POZYX_GETSTATUS) {
+					//This needs redesigned, since the thread must be running for this to happen
+					if (thread_running) {
+						warnx("\trunning\n");
+						status.status += 1;
+					} else {
+						warnx("\tnot started\n");
+						status.status = 0;
+					}
+					status.timestamp = hrt_absolute_time();
+					orb_publish(ORB_ID(pozyx_status),status_pub_fd,&status);
 
-				pozyx::config(POZYX_BUS_ALL, 2);
-				pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db, target);
-				pozyx::getuwb(POZYX_BUS_ALL, 2);
-			}
-			if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
-				pozyx::resettofactory(POZYX_BUS_ALL, 2);
-			}
-			if (cmd.command == MAV_CMD_POZYX_SETTHRESHOLDS) {
-				pozyx::setthresholds(cmd.param1, cmd.param2, cmd.param3);
-			}
-			if (cmd.command == MAV_CMD_POZYX_SETHEIGHT) {
-				pozyx::setheight(cmd.param1);
+				}
+				if (cmd.command == MAV_CMD_POZYX_GETTAGSTATUS) {
+					pozyx::test(POZYX_BUS_ALL, 2);
+				}
+				if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
+					uint8_t type = static_cast<int>(cmd.param1);
+					if (type > 0 && type < 3){
+						pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
+					}
+				}
+				if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
+					pozyx::clearanchors(POZYX_BUS_ALL, 2);
+				}
+				if (cmd.command == MAV_CMD_POZYX_ADDANCHOR) {
+					//uint8_t id = static_cast<int>(cmd.param1);
+					uint16_t anchor_id = static_cast<int>(cmd.param2);
+					uint32_t x = static_cast<int>(cmd.param3);
+					uint32_t y = static_cast<int>(cmd.param4);
+					uint32_t z = static_cast<int>(cmd.param5);
+					pozyx::addanchor(POZYX_BUS_ALL, 2, anchor_id, x, y, z);
+				}
+				if (cmd.command == MAV_CMD_POZYX_GETANCHORS) {
+					pozyx::getanchors(POZYX_BUS_ALL, 2);
+				}
+				if (cmd.command == MAV_CMD_POZYX_GETUWB) {
+					pozyx::getuwb(POZYX_BUS_ALL, 2);
+				}
+				if (cmd.command == MAV_CMD_POZYX_SETUWB) {
+					uint8_t channel = static_cast<int>(cmd.param1);
+					uint8_t bitrate = static_cast<int>(cmd.param2);
+					uint8_t prf = static_cast<int>(cmd.param3);
+					uint8_t plen = static_cast<int>(cmd.param4);
+					float gain_db = cmd.param5/2.0;
+					uint16_t target = static_cast<int>(cmd.param6);
+
+					pozyx::config(POZYX_BUS_ALL, 2);
+					pozyx::setuwb(POZYX_BUS_ALL, 2, channel, bitrate, prf, plen, gain_db, target);
+					pozyx::getuwb(POZYX_BUS_ALL, 2);
+				}
+				if (cmd.command == MAV_CMD_POZYX_RESETTOFACTORY) {
+					pozyx::resettofactory(POZYX_BUS_ALL, 2);
+				}
+				if (cmd.command == MAV_CMD_POZYX_SETTHRESHOLDS) {
+					pozyx::setthresholds(cmd.param1, cmd.param2, cmd.param3);
+				}
+				if (cmd.command == MAV_CMD_POZYX_SETHEIGHT) {
+					pozyx::setheight(cmd.param1);
+				}
 			}
 		}
 	}
