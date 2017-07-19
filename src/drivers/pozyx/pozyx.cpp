@@ -105,7 +105,7 @@ namespace pozyx
 	void	reset(enum POZYX_BUS busid, int count);
 	void	getposition(enum POZYX_BUS busid, int count, bool print_result, uint8_t type);
 	void	addanchor(enum POZYX_BUS busid, int count, uint16_t network_id, int32_t x, int32_t y, int32_t z);
-	void	autoanchors(enum POZYX_BUS busid, int count);
+	void	setanchors(enum POZYX_BUS busid, int count, uint8_t type);
 	void	getanchors(enum POZYX_BUS busid, int count);
 	void	clearanchors(enum POZYX_BUS busid, int count);
 	void	getuwb(enum POZYX_BUS busid, int count);
@@ -479,6 +479,7 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
+			/*
 			uint8_t max_anchors = 143; //15 && auto selection bit
 			if (bus.dev->regWrite(POZYX_POS_NUM_ANCHORS, &max_anchors, 1) == POZYX_SUCCESS) {
 				usleep(200);
@@ -486,12 +487,17 @@ namespace pozyx
 					PX4_INFO("Auto anchor selection set. Maximum %d anchors used.", max_anchors);
 				}		
 			}
+			*/
+			usleep(200);
 			if (bus.dev->setRangingProtocol(POZYX_RANGE_PROTOCOL_FAST) == POZYX_SUCCESS) {
-				usleep(200);
+				PX4_INFO("Fast ranging protocol set.");
+
 			}
+			usleep(200);
 			if (bus.dev->setPositionAlgorithm(POZYX_POS_ALG_UWB_ONLY, POZYX_2_5D) == POZYX_SUCCESS) {
-				usleep(200);
+				PX4_INFO("UWB-Only, 2.5D algorithm used.");
 			}
+			usleep(200);
 
 		}
 	}
@@ -540,6 +546,90 @@ namespace pozyx
 		stored_anchors[stored_anchors_count-1] = poz_anchor;
 
 	}
+
+	void
+	setanchors(enum POZYX_BUS busid, int count, uint8_t type)
+	{
+		struct pozyx_anchor_s anchor;
+		memset(&anchor, 0, sizeof(anchor));
+		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
+
+		uint16_t anchorlist2_1[8] = {0x212, 0x2A2, 0x221, 0x241, 0x2D2, 0x252};
+		uint16_t anchorlist2_2[4] = {0x231, 0x232, 0x2D2, 0x252};
+		uint16_t anchorlist2_3[4] = {0x212, 0x2A2, 0x231, 0x232};
+		uint16_t anchorlist3_1[8] = {0x312, 0x3A2, 0x321, 0x341, 0x3D2, 0x352};
+		uint16_t anchorlist3_2[4] = {0x331, 0x332, 0x3D2, 0x352};
+		uint16_t anchorlist3_3[4] = {0x312, 0x3A2, 0x331, 0x332};
+
+		unsigned startid = 0;
+		for (int i=0; i<count; i++){	
+
+			struct pozyx_bus_option &bus = find_bus(busid, startid);
+			startid = bus.index + 1;
+
+			if (type && 0x1C == 0x00) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_1, 6) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 6);
+					anchor.x_pos = 2;
+					anchor.y_pos = 1;
+				}
+			}
+			else if (type && 0x1C == 0x04) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_2, 4) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					anchor.x_pos = 2;
+					anchor.y_pos = 2;
+				}
+			}
+			else if (type && 0x1C == 0x08) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_3, 4) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					anchor.x_pos = 2;
+					anchor.y_pos = 3;
+				}
+			}
+			else if (type && 0x1C == 0x10) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_1, 6) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 6);
+					anchor.x_pos = 3;
+					anchor.y_pos = 1;
+				}
+			}
+			else if (type && 0x1C == 0x14) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_2, 4) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					anchor.x_pos = 3;
+					anchor.y_pos = 2;
+				}
+			}
+			else if (type && 0x1C == 0x18) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_3, 4) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					anchor.x_pos = 3;
+					anchor.y_pos = 3;
+				}
+			}
+			anchor.id = bus.index;
+			anchor.anchor_id = 0xAAAA;
+			anchor.z_pos = 0;
+			anchor.timestamp = hrt_absolute_time();
+			orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);
+			usleep(300000);	
+		}	
+	}
+
 
 	void
 	clearanchors(enum POZYX_BUS busid, int count)
@@ -978,6 +1068,9 @@ pozyx_commands(int argc, char *argv[])
 					uint8_t type = static_cast<int>(cmd.param1);
 					if (type > 0 && type < 3){
 						pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
+					}
+					else if (type >= 32){
+						pozyx::setanchors(POZYX_BUS_ALL, 2, type);
 					}
 				}
 				if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
