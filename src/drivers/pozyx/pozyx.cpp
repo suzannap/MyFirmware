@@ -554,9 +554,11 @@ namespace pozyx
 		memset(&anchor, 0, sizeof(anchor));
 		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
 
+		uint16_t anchorlist2_0[8] = {0x212, 0x2A2, 0x221, 0x231, 0x232, 0x241, 0x2D2, 0x252};
 		uint16_t anchorlist2_1[6] = {0x212, 0x2A2, 0x221, 0x241, 0x2D2, 0x252};
 		uint16_t anchorlist2_2[4] = {0x231, 0x232, 0x2D2, 0x252};
 		uint16_t anchorlist2_3[4] = {0x212, 0x2A2, 0x231, 0x232};
+		uint16_t anchorlist3_0[8] = {0x312, 0x3A2, 0x321, 0x331, 0x332, 0x341, 0x3D2, 0x352};
 		uint16_t anchorlist3_1[6] = {0x312, 0x3A2, 0x321, 0x341, 0x3D2, 0x352};
 		uint16_t anchorlist3_2[4] = {0x331, 0x332, 0x3D2, 0x352};
 		uint16_t anchorlist3_3[4] = {0x312, 0x3A2, 0x331, 0x332};
@@ -569,23 +571,32 @@ namespace pozyx
 
 			if ((type & 0x1C) == 0x00) 
 			{
-				if (bus.dev->setPositioningAnchorIds(anchorlist2_1, 6) == POZYX_SUCCESS){
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_0, 8) == POZYX_SUCCESS){
 					usleep(500);
-					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 6);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 8);
 					anchor.x_pos = 2;
 					anchor.y_pos = 1;
 				}
 			}
 			else if ((type & 0x1C) == 0x04) 
 			{
-				if (bus.dev->setPositioningAnchorIds(anchorlist2_2, 4) == POZYX_SUCCESS){
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_1, 6) == POZYX_SUCCESS){
 					usleep(500);
-					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 6);
 					anchor.x_pos = 2;
 					anchor.y_pos = 2;
 				}
 			}
 			else if ((type & 0x1C) == 0x08) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_2, 4) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					anchor.x_pos = 2;
+					anchor.y_pos = 3;
+				}
+			}
+			else if ((type & 0x1C) == 0x0C) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_3, 4) == POZYX_SUCCESS){
 					usleep(500);
@@ -596,23 +607,32 @@ namespace pozyx
 			}
 			else if ((type & 0x1C) == 0x10) 
 			{
-				if (bus.dev->setPositioningAnchorIds(anchorlist3_1, 6) == POZYX_SUCCESS){
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_0, 8) == POZYX_SUCCESS){
 					usleep(500);
-					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 6);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 8);
 					anchor.x_pos = 3;
 					anchor.y_pos = 1;
 				}
 			}
 			else if ((type & 0x1C) == 0x14) 
 			{
-				if (bus.dev->setPositioningAnchorIds(anchorlist3_2, 4) == POZYX_SUCCESS){
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_1, 6) == POZYX_SUCCESS){
 					usleep(500);
-					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 6);
 					anchor.x_pos = 3;
 					anchor.y_pos = 2;
 				}
 			}
 			else if ((type & 0x1C) == 0x18) 
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_2, 4) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, 4);
+					anchor.x_pos = 3;
+					anchor.y_pos = 3;
+				}
+			}
+			else if ((type & 0x1C) == 0x1C) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_3, 4) == POZYX_SUCCESS){
 					usleep(500);
