@@ -1265,7 +1265,6 @@ int PozyxClass::setPositioningAnchorIds(uint16_t anchors[], int anchor_num, uint
 
   if(remote_id == NULL){
     status = regFunction(POZYX_POS_SET_ANCHOR_IDS, (uint8_t *) anchors, anchor_num * 2, NULL, 0);
-    PX4_INFO("I made it here"); 
   }
   else{
     status = remoteRegFunction(remote_id, POZYX_POS_SET_ANCHOR_IDS, (uint8_t *) anchors, anchor_num * 2, NULL, 0); 

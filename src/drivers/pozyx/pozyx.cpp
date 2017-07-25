@@ -567,7 +567,7 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			if (type && 0x1C == 0x00) 
+			if ((type & 0x1C) == 0x00) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_1, 6) == POZYX_SUCCESS){
 					usleep(500);
@@ -576,7 +576,7 @@ namespace pozyx
 					anchor.y_pos = 1;
 				}
 			}
-			else if (type && 0x1C == 0x04) 
+			else if ((type & 0x1C) == 0x04) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_2, 4) == POZYX_SUCCESS){
 					usleep(500);
@@ -585,7 +585,7 @@ namespace pozyx
 					anchor.y_pos = 2;
 				}
 			}
-			else if (type && 0x1C == 0x08) 
+			else if ((type & 0x1C) == 0x08) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_3, 4) == POZYX_SUCCESS){
 					usleep(500);
@@ -594,7 +594,7 @@ namespace pozyx
 					anchor.y_pos = 3;
 				}
 			}
-			else if (type && 0x1C == 0x10) 
+			else if ((type & 0x1C) == 0x10) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_1, 6) == POZYX_SUCCESS){
 					usleep(500);
@@ -603,7 +603,7 @@ namespace pozyx
 					anchor.y_pos = 1;
 				}
 			}
-			else if (type && 0x1C == 0x14) 
+			else if ((type & 0x1C) == 0x14) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_2, 4) == POZYX_SUCCESS){
 					usleep(500);
@@ -612,7 +612,7 @@ namespace pozyx
 					anchor.y_pos = 2;
 				}
 			}
-			else if (type && 0x1C == 0x18) 
+			else if ((type & 0x1C) == 0x18) 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_3, 4) == POZYX_SUCCESS){
 					usleep(500);
@@ -1066,8 +1066,8 @@ pozyx_commands(int argc, char *argv[])
 				}
 				if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
 					uint8_t type = static_cast<int>(cmd.param1);
-					if (type > 0 && type < 3){
-						pozyx::getposition(POZYX_BUS_ALL, 2, false, type);
+					if ((type & 0x03) > 0 ){
+						pozyx::getposition(POZYX_BUS_ALL, 2, false, (type & 0x03));
 					}
 					else if (type >= 32){
 						pozyx::setanchors(POZYX_BUS_ALL, 2, type);
