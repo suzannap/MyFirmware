@@ -554,19 +554,22 @@ namespace pozyx
 		memset(&anchor, 0, sizeof(anchor));
 		orb_advert_t anchor_pub_fd = orb_advertise(ORB_ID(pozyx_anchor), &anchor);
 
-		int set0count = 10;
-		int set1count = 6;
-		int set2count = 6;
-		int set3count = 4;
+		int set0count = 4;
+		int set1count = 5;
+		int set2count = 5;
+		int set3count = 5;
+		int set4count = 5;
 
-		uint16_t anchorlist2_0[set0count] = {0x212, 0x2A2, 0x221, 0x231, 0x232, 0x233, 0x234, 0x241, 0x2D2, 0x252};
-		uint16_t anchorlist2_1[set1count] = {0x212, 0x2A2, 0x221, 0x241, 0x2D2, 0x252};
-		uint16_t anchorlist2_2[set2count] = {0x212, 0x2A2, 0x233, 0x234, 0x2D2, 0x252};
-		uint16_t anchorlist2_3[set3count] = {0x231, 0x232, 0x233, 0x234};
-		uint16_t anchorlist3_0[set0count] = {0x312, 0x3A2, 0x321, 0x331, 0x332, 0x333, 0x334, 0x341, 0x3D2, 0x352};
-		uint16_t anchorlist3_1[set1count] = {0x312, 0x3A2, 0x321, 0x341, 0x3D2, 0x352};
-		uint16_t anchorlist3_2[set2count] = {0x312, 0x3A2, 0x333, 0x334, 0x3D2, 0x352};
-		uint16_t anchorlist3_3[set3count] = {0x331, 0x332, 0x333, 0x334};
+		uint16_t anchorlist2_0[set0count] = {0x231, 0x232, 0x233, 0x234};
+		uint16_t anchorlist2_1[set1count] = {0x212, 0x233, 0x234, 0x2D2, 0x252};
+		uint16_t anchorlist2_2[set2count] = {0x212, 0x2A2, 0x233, 0x2D2, 0x252};
+		uint16_t anchorlist2_3[set3count] = {0x212, 0x2A2, 0x233, 0x234, 0x252};
+		uint16_t anchorlist2_4[set4count] = {0x212, 0x2A2, 0x234, 0x2D2, 0x252};
+		uint16_t anchorlist3_0[set0count] = {0x331, 0x332, 0x333, 0x334};
+		uint16_t anchorlist3_1[set1count] = {0x312, 0x333, 0x334, 0x3D2, 0x352};
+		uint16_t anchorlist3_2[set2count] = {0x312, 0x3A2, 0x333, 0x3D2, 0x352};
+		uint16_t anchorlist3_3[set3count] = {0x312, 0x3A2, 0x333, 0x334, 0x352};
+		uint16_t anchorlist3_4[set4count] = {0x312, 0x3A2, 0x334, 0x3D2, 0x352};
 
 		unsigned startid = 0;
 		for (int i=0; i<count; i++){	
@@ -574,34 +577,43 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			if ((type & 0x1C) == 0x00) 
+			if ((type & 0x30) == 0x10) //channel 2 vom 3 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_0, set0count) == POZYX_SUCCESS){
 					usleep(500);
 					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set0count);
 					anchor.x_pos = 2;
-					anchor.y_pos = 1;
+					anchor.y_pos = 0;
 				}
 			}
-			else if ((type & 0x1C) == 0x04) 
+			else if ((type & 0x30) == 0x30) //channel 3 vom 3
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_0, set0count) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set0count);
+					anchor.x_pos = 3;
+					anchor.y_pos = 0;
+				}
+			}
+			else if ((type & 0x3C) == 0x00) // channel 2 DSL
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_1, set1count) == POZYX_SUCCESS){
 					usleep(500);
 					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set1count);
 					anchor.x_pos = 2;
-					anchor.y_pos = 2;
+					anchor.y_pos = 1;
 				}
 			}
-			else if ((type & 0x1C) == 0x08) 
+			else if ((type & 0x3C) == 0x04) //channel 2 USL
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_2, set2count) == POZYX_SUCCESS){
 					usleep(500);
 					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set2count);
 					anchor.x_pos = 2;
-					anchor.y_pos = 3;
+					anchor.y_pos = 2;
 				}
 			}
-			else if ((type & 0x1C) == 0x0C) 
+			else if ((type & 0x3C) == 0x08) // channel 2 DSR
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_3, set3count) == POZYX_SUCCESS){
 					usleep(500);
@@ -610,40 +622,49 @@ namespace pozyx
 					anchor.y_pos = 3;
 				}
 			}
-			else if ((type & 0x1C) == 0x10) 
+			else if ((type & 0x3C) == 0x0C) //channel 2 USR
 			{
-				if (bus.dev->setPositioningAnchorIds(anchorlist3_0, set0count) == POZYX_SUCCESS){
+				if (bus.dev->setPositioningAnchorIds(anchorlist2_4, set4count) == POZYX_SUCCESS){
 					usleep(500);
-					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set0count);
-					anchor.x_pos = 3;
-					anchor.y_pos = 1;
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set4count);
+					anchor.x_pos = 2;
+					anchor.y_pos = 4;
 				}
 			}
-			else if ((type & 0x1C) == 0x14) 
+			else if ((type & 0x3C) == 0x20) //channel 3 DSL
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_1, set1count) == POZYX_SUCCESS){
 					usleep(500);
 					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set1count);
 					anchor.x_pos = 3;
-					anchor.y_pos = 2;
+					anchor.y_pos = 1;
 				}
 			}
-			else if ((type & 0x1C) == 0x18) 
+			else if ((type & 0x3C) == 0x24) //channel 3 USL
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_2, set2count) == POZYX_SUCCESS){
 					usleep(500);
 					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set2count);
 					anchor.x_pos = 3;
-					anchor.y_pos = 3;
+					anchor.y_pos = 2;
 				}
 			}
-			else if ((type & 0x1C) == 0x1C) 
+			else if ((type & 0x3C) == 0x28) //channel 3 DSR
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_3, set3count) == POZYX_SUCCESS){
 					usleep(500);
 					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set3count);
 					anchor.x_pos = 3;
 					anchor.y_pos = 3;
+				}
+			}
+			else if ((type & 0x3C) == 0x2C) //channel 3 USR
+			{
+				if (bus.dev->setPositioningAnchorIds(anchorlist3_4, set4count) == POZYX_SUCCESS){
+					usleep(500);
+					bus.dev->setSelectionOfAnchors(POZYX_ANCHOR_SEL_MANUAL, set4count);
+					anchor.x_pos = 3;
+					anchor.y_pos = 4;
 				}
 			}
 			anchor.id = bus.index;
@@ -1091,11 +1112,11 @@ pozyx_commands(int argc, char *argv[])
 				}
 				if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
 					uint8_t type = static_cast<int>(cmd.param1);
-					if ((type & 0x03) > 0 ){
-						pozyx::getposition(POZYX_BUS_ALL, 2, false, (type & 0x03));
-					}
-					else if (type >= 32){
+					if ((type & 0x40) > 0){
 						pozyx::setanchors(POZYX_BUS_ALL, 2, type);
+					}
+					else if ((type & 0x03) > 0 ){
+						pozyx::getposition(POZYX_BUS_ALL, 2, false, (type & 0x03));
 					}
 				}
 				if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {
