@@ -49,7 +49,7 @@ static bool thread_running = false;		/**< daemon status flag */
 static int daemon_task;				/**< Handle of daemon task / thread */
 static int count = 0;
 static int tag_height = 0;
-static int err_thresholds[3] = {300,1300,700};
+static int err_thresholds[3] = {300,1800,200};
 static device_coordinates_t stored_anchors[24];
 static int stored_anchors_count = 0;
 static double actual_yaw = 0.0f;
@@ -315,21 +315,25 @@ namespace pozyx
 		position.x_pos = 0;
 		position.y_pos = 0;
 		position.z_pos = 0;
+		/*
 		position.x_cov = 0;
 		position.y_cov = 0;
 		position.z_cov = 0;
 		position.xy_cov = 0;
 		position.xz_cov = 0;
 		position.yz_cov = 0;
+		*/
 		position.x_pos_2 = 0;
 		position.y_pos_2 = 0;
 		position.z_pos_2 = 0;
+		/*
 		position.x_cov_2 = 0;
 		position.y_cov_2 = 0;
 		position.z_cov_2 = 0;
 		position.xy_cov_2 = 0;
 		position.xz_cov_2 = 0;
 		position.yz_cov_2 = 0;	
+		*/
 
 
 		//measure first tag for every mode

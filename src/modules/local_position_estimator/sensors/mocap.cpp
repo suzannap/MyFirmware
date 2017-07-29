@@ -14,10 +14,12 @@ extern orb_advert_t mavlink_log_pub;
 // to initialize
 static const uint32_t 		REQ_MOCAP_INIT_COUNT = 1;
 static const uint32_t 		MOCAP_TIMEOUT =     10000000;	// 10.0 s
+/*
 static float last_pozyx_x = 0;
 static float last_pozyx_y = 0;
 static float last_pozyx_vx = 0;
 static float last_pozyx_vy = 0;
+*/
 
 void BlockLocalPositionEstimator::mocapInit()
 {
@@ -55,23 +57,23 @@ int BlockLocalPositionEstimator::mocapMeasure(Vector<float, n_y_mocap> &y)
 
 	//****************************************************************************************
 	//waterbee test for not jumping
-	
-	/* subscribe to vehicle attitude topic */
+	/*
+	// subscribe to vehicle attitude topic 
 	int lpos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
 	struct vehicle_local_position_s lpos;
 	memset(&lpos, 0, sizeof(lpos));
 
-	/* wakeup source(s) */
+	// wakeup source(s) 
 	px4_pollfd_struct_t fds[1];
 	
-	/* pace output  */
+	// pace output  
 	fds[0].fd = lpos_sub;
 	fds[0].events = POLLIN;
 
-	/* wait for up to 250ms for data */
+	// wait for up to 250ms for data 
 	int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 25);
 
-	/* timed out - periodic check for thread_should_exit, etc. */
+	// timed out - periodic check for thread_should_exit, etc. 
 	if (pret>0) {
 		orb_copy(ORB_ID(vehicle_local_position), lpos_sub, &lpos);
 	}
@@ -87,8 +89,7 @@ int BlockLocalPositionEstimator::mocapMeasure(Vector<float, n_y_mocap> &y)
 	float pozyx_vx = (pozyx_x - current_x)/pozyx_dt;
 	float pozyx_vy = (pozyx_y - current_y)/pozyx_dt;
 	//PX4_INFO("DEBUG::::::::cur_vx = %2.2f, cur_vy = %2.2f, dtime = %2.5f", (double)current_vx, (double)current_vy, (double)pozyx_dt);
-
-	/* no acc
+	
 	float pozyx_ax = (pozyx_vx - current_vx)/pozyx_dt;
 	float pozyx_ay = (pozyx_vy - current_vy)/pozyx_dt;
 	param_get(param_find("MPC_ACC_HOR_MAX"), &v);
@@ -102,7 +103,6 @@ int BlockLocalPositionEstimator::mocapMeasure(Vector<float, n_y_mocap> &y)
 	}
 	pozyx_vx = current_vx + pozyx_ax * pozyx_dt;
 	pozyx_vy = current_vy + pozyx_ay * pozyx_dt;
-	*/ // no acc
 
 	param_get(param_find("MPC_XY_VEL_MAX"), &v);
 	float xy_speed = sqrt(pozyx_vx * pozyx_vx + pozyx_vy * pozyx_vy);
@@ -125,10 +125,10 @@ int BlockLocalPositionEstimator::mocapMeasure(Vector<float, n_y_mocap> &y)
 
 	y(Y_mocap_x) = pozyx_x;
 	y(Y_mocap_y) = pozyx_y;
-	//*******************************************************************************************************
-
-	//y(Y_mocap_x) = _sub_mocap.get().x;
-	//y(Y_mocap_y) = _sub_mocap.get().y;
+	// *******************************************************************************************************
+	*/
+	y(Y_mocap_x) = _sub_mocap.get().x;
+	y(Y_mocap_y) = _sub_mocap.get().y;
 	y(Y_mocap_z) = _sub_mocap.get().z;
 	_mocapStats.update(y);
 	_time_last_mocap = _sub_mocap.get().timestamp;
