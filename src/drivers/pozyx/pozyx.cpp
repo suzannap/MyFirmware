@@ -251,7 +251,7 @@ namespace pozyx
 			PX4_INFO("value of whoami is: 0x%x", whoami);
 
 			if (testread != POZYX_SUCCESS) {
-				err(1, "immediate read failed");
+				//err(1, "immediate read failed");
 				if (i==0){	
 					status.result += 2;
 				}
@@ -374,8 +374,8 @@ namespace pozyx
 
 			//if we got 2 successful measurements
 			if (validcount == 2) {
-				float paramval = 0.1;
-				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
+				//float paramval = 0.1;
+				//param_set(param_find("ATT_W_EXT_HDG"), &paramval);
 				double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
 				yaw_error = yaw - actual_yaw;
 
@@ -404,8 +404,8 @@ namespace pozyx
 			}
 		}
 		else if ((type == 1) && (validcount == 1)) { //if just measuring 1 tag, use angle to get center position
-			float paramval = 0.0;
-			param_set(param_find("ATT_W_EXT_HDG"), &paramval);
+			//float paramval = 0.0;
+			//param_set(param_find("ATT_W_EXT_HDG"), &paramval);
 			/* subscribe to vehicle attitude topic */
 			int att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
 			struct vehicle_attitude_s att;
@@ -424,7 +424,7 @@ namespace pozyx
 			/* timed out - periodic check for thread_should_exit, etc. */
 			if (pret == 0) {
 				/* this means none of our providers is giving us data */
-				PX4_ERR("Attitude: Got no data");
+				PX4_INFO("Attitude: Got no data");
 			} else if (pret < 0) {
 			/* this is undesirable but not much we can do - might want to flag unhappy status */
 				warn("attitude: poll error %d, %d", pret, errno);
@@ -570,6 +570,7 @@ namespace pozyx
 		uint16_t anchorlist3_2[set2count] = {0x312, 0x3A2, 0x333, 0x3D2, 0x352};
 		uint16_t anchorlist3_3[set3count] = {0x312, 0x3A2, 0x333, 0x334, 0x352};
 		uint16_t anchorlist3_4[set4count] = {0x312, 0x3A2, 0x334, 0x3D2, 0x352};
+
 
 		unsigned startid = 0;
 		for (int i=0; i<count; i++){	
