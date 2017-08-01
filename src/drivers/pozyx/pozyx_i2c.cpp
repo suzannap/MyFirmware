@@ -8,7 +8,7 @@ POZYX_I2C_interface(int bus, const char *devname, uint8_t devaddr)
 }
 
 POZYX_I2C::POZYX_I2C(int bus, const char *devname, uint8_t devaddr) :
-I2C("POZYX_I2C", devname, bus, devaddr, 400000)
+I2C("POZYX_I2C", devname, bus, devaddr, 100000)
 {
 	_device_id.devid_s.devtype = DRV_POS_DEVTYPE_POZYX;
 }

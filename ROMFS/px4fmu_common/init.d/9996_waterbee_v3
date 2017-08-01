@@ -8,9 +8,9 @@
 #
 
 #start required apps:
-#sh /etc/init.d/rc.mc_defaults
+sh /etc/init.d/rc.mc_defaults
 
-set VEHICLE_TYPE mc
+#set VEHICLE_TYPE mc
 
 
 #Golden Parameter Set:
@@ -106,6 +106,10 @@ param set SYS_RESTART_TYPE 0
 
 #set mixers
 set MIXER waterbee_v3
-set MIXER_AUX pass
+
+#set aux mixer and settings
+#set MIXER_AUX pass
+#set PWM_AUX_RATE 50
+#set PWM_AUX_OUT 1234
 
 pozyx start
