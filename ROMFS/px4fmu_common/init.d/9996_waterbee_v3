@@ -54,11 +54,15 @@ param set LPE_X_LP 5.000000000000000000
 param set MAV_BROADCAST 1
 param set MAV_PROTO_VER 0
 param set MAV_SYS_ID 10
+
 #param set MC_PITCHRATE_P 3.5
-param set MC_PITCHRATE_P 2
+#param set MC_PITCHRATE_P 2
+param set MC_PITCHRATE_P 1.7
 param set MC_PITCH_P 0.0
 #param set MC_ROLLRATE_P 3.7
-param set MC_ROLLRATE_P 2.1
+#param set MC_ROLLRATE_P 2.1
+param set MC_ROLLRATE_P 1.8
+
 param set MC_ROLL_P 0.000000000000000000
 param set MC_YAWRATE_D 0.009999999776482582
 param set MC_YAWRATE_FF 0.001000000047497451
@@ -77,13 +81,19 @@ param set MPC_TILTMAX_AIR 90.000000000000000000
 param set MPC_TILTMAX_LND 90.000000000000000000
 param set MPC_VELD_LP 2.000000000000000000
 param set MPC_XY_CRUISE 0.500000000000000000
+
 #param set MPC_XY_FF 0.6
-param set MPC_XY_FF 0.2
+#param set MPC_XY_FF 0.2
+param set MPC_XY_FF 0.18
 #param set MPC_XY_P 0.22
-param set MPC_XY_P 0.2
+#param set MPC_XY_P 0.2
+param set MPC_XY_P 0.18
 #param set MPC_XY_VEL_D 0.04
-param set MPC_XY_VEL_D 0.03
-param set MPC_XY_VEL_I 0.015
+#param set MPC_XY_VEL_D 0.03
+param set MPX_XY_VEL_D 0.025
+#param set MPC_XY_VEL_I 0.015
+param set MPC_XY_VEL_I 0.014
+
 param set MPC_XY_VEL_MAX 0.6
 param set MPC_XY_VEL_P 0.14
 param set PWM_AUX_DISARMED 1000
