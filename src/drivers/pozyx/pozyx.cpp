@@ -677,12 +677,14 @@ namespace pozyx
 			anchor.z_pos = 0;
 			anchor.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);
+			/*
 			usleep(500);
 			bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS);
 			usleep(500);
 			uint8_t regs[1] = {POZYX_POS_NUM_ANCHORS};	
 			bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 1);
 			usleep(500);
+			*/
 
 		}	
 	}
@@ -1127,11 +1129,11 @@ pozyx_commands(int argc, char *argv[])
 				}
 				if (cmd.command == MAV_CMD_POZYX_GETPOSITION) {
 					uint8_t type = static_cast<int>(cmd.param1);
+					if ((type & 0x03) > 0 ){
+						pozyx::getposition(POZYX_BUS_ALL, 2, false, (type & 0x03));
+					}
 					if ((type & 0x40) > 0){
 						pozyx::setanchors(POZYX_BUS_ALL, 2, type);
-					}
-					else if ((type & 0x03) > 0 ){
-						pozyx::getposition(POZYX_BUS_ALL, 2, false, (type & 0x03));
 					}
 				}
 				if (cmd.command == MAV_CMD_POZYX_CLEARANCHORS) {

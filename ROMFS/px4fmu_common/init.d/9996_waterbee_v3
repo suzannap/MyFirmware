@@ -91,8 +91,7 @@ param set MPC_XY_P 0.18
 #param set MPC_XY_VEL_D 0.04
 #param set MPC_XY_VEL_D 0.03
 param set MPX_XY_VEL_D 0.025
-#param set MPC_XY_VEL_I 0.015
-param set MPC_XY_VEL_I 0.014
+param set MPC_XY_VEL_I 0.015
 
 param set MPC_XY_VEL_MAX 0.6
 param set MPC_XY_VEL_P 0.14

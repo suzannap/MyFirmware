@@ -13,7 +13,7 @@ extern orb_advert_t mavlink_log_pub;
 // required number of samples for sensor
 // to initialize
 static const uint32_t 		REQ_MOCAP_INIT_COUNT = 1;
-static const uint32_t 		MOCAP_TIMEOUT =     10000000;	// 10.0 s
+static const uint32_t 		MOCAP_TIMEOUT =     20000000;	// 20.0 s
 /*
 static float last_pozyx_x = 0;
 static float last_pozyx_y = 0;
