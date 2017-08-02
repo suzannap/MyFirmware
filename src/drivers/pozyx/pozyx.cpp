@@ -49,7 +49,7 @@ static bool thread_running = false;		/**< daemon status flag */
 static int daemon_task;				/**< Handle of daemon task / thread */
 static int count = 0;
 static int tag_height = 0;
-static int err_thresholds[3] = {300,1800,200};
+static int err_thresholds[3] = {300,2000,0};
 static device_coordinates_t stored_anchors[24];
 static int stored_anchors_count = 0;
 static double actual_yaw = 0.0f;
@@ -523,11 +523,11 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 			if (bus.dev->addDevice(poz_anchor) == POZYX_SUCCESS){
-				/*
-				if (bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS) == POZYX_SUCCESS) {
+				
+				if (bus.dev->saveConfiguration(POZYX_FLASH_NETWORK) == POZYX_SUCCESS) {
 					PX4_INFO("Anchor 0x%x added to tag %d", network_id, bus.index);
 				}
-				*/
+				
 				usleep(500);
 				uint8_t device_list_size;
 				if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
@@ -677,7 +677,13 @@ namespace pozyx
 			anchor.z_pos = 0;
 			anchor.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);
-			usleep(300000);	
+			usleep(500);
+			bus.dev->saveConfiguration(POZYX_FLASH_ANCHOR_IDS);
+			usleep(500);
+			uint8_t regs[1] = {POZYX_POS_NUM_ANCHORS};	
+			bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 1);
+			usleep(500);
+
 		}	
 	}
 
@@ -786,6 +792,7 @@ namespace pozyx
 	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db, uint16_t target)
 	{
 		unsigned startid = 0;
+		uint8_t regs[3] = {POZYX_UWB_CHANNEL, POZYX_UWB_RATES, POZYX_UWB_PLEN};
 
 		//uint8_t plens[8] = {0x0C, 0x28, 0x18, 0x08, 0x34, 0x24, 0x14, 0x04};
 		UWB_settings_t mysettings;
@@ -802,6 +809,8 @@ namespace pozyx
 
 				if (bus.dev->setUWBSettings(&mysettings) == POZYX_SUCCESS){
 					PX4_INFO("UWB settings updated on tag %d", bus.index);
+					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 3);
+
 				}
 			}
 		}
@@ -810,6 +819,7 @@ namespace pozyx
 
 			if (bus.dev->setUWBSettings(&mysettings, target) == POZYX_SUCCESS){
 				PX4_INFO("UWB settings updated on device %x", target);
+					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 3, target);
 			}
 			else {
 				PX4_INFO("Device %x not found", target);

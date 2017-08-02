@@ -53,7 +53,7 @@
 #define POZYX_POS_FILTER        0x14   /* Configure any additional positioning filter */
 #define POZYX_CONFIG_LEDS       0x15   /* Configure the LEDs */
 #define POZYX_POS_ALG         0x16   /* Algorithm used for positioning */
-#define POZYX_POS_NUM_ANCHORS       0x17   /* Configure the number of anchors and selection procedure */
+#define POZYX_POS_NUM_ANCHORS 0x17   /* Configure the number of anchors and selection procedure */
 #define POZYX_POS_INTERVAL        0x18   /* Defines the update interval in ms in continuous positioning. */
 #define POZYX_NETWORK_ID        0x1A   /* The network id.  */
 #define POZYX_UWB_CHANNEL       0x1C   /* UWB channel number. */
