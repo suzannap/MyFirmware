@@ -49,7 +49,7 @@ static bool thread_running = false;		/**< daemon status flag */
 static int daemon_task;				/**< Handle of daemon task / thread */
 static int count = 0;
 static int tag_height = 400;
-static int err_thresholds[3] = {300,2000,0};
+static int err_thresholds[3] = {300,1800,200};
 static device_coordinates_t stored_anchors[24];
 static int stored_anchors_count = 0;
 static double actual_yaw = 0.0f;
@@ -386,7 +386,7 @@ namespace pozyx
 				}
 
 				//lower weight of yaw if loose measurement
-				if ((sensor_distance > (0.65f*err_thresholds[1] + 0.35f* err_thresholds[0]) || sensor_distance < (0.35f*err_thresholds[1] + 0.65f* err_thresholds[0]))){
+				if ((sensor_distance > (0.7f*err_thresholds[1] + 0.3f* err_thresholds[0]) || sensor_distance < (0.3f*err_thresholds[1] + 0.7f* err_thresholds[0]))){
 					paramval = 0.01;
 				}
 				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
