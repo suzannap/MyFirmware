@@ -982,16 +982,16 @@ void BlockLocalPositionEstimator::predict()
 		//waterbee chop
 		for (int d=0; d < n_u; d++) {
 			if (_u(d) > 0) {
-				if (_u(d) > 0.3f) {
-					_u(d) -= 0.3f;
+				if (_u(d) > 0.2f) {
+					_u(d) -= 0.2f;
 				}
 				else {
 					_u(d) = 0;				
 				}
 			}
 			else if (_u(d) < 0) {
-				if (_u(d) < -0.3f) {
-					_u(d) += 0.3f;
+				if (_u(d) < -0.2f) {
+					_u(d) += 0.2f;
 				}
 				else {
 					_u(d) = 0;				

@@ -48,7 +48,7 @@ static bool thread_should_exit = false;		/**< daemon exit flag */
 static bool thread_running = false;		/**< daemon status flag */
 static int daemon_task;				/**< Handle of daemon task / thread */
 static int count = 0;
-static int tag_height = 0;
+static int tag_height = 400;
 static int err_thresholds[3] = {300,2000,0};
 static device_coordinates_t stored_anchors[24];
 static int stored_anchors_count = 0;
@@ -378,10 +378,22 @@ namespace pozyx
 
 			//if we got 2 successful measurements
 			if (validcount == 2) {
-				//float paramval = 0.1;
-				//param_set(param_find("ATT_W_EXT_HDG"), &paramval);
+				float paramval = 0.1;
+				float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].x),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
+				if ((sensor_distance > err_thresholds[1]) || (sensor_distance < err_thresholds[2])){
+					//sensor measurements are not consistent, checking expected distance
+					validcount = 0;
+				}
+
+				//lower weight of yaw if loose measurement
+				if ((sensor_distance > (0.65f*err_thresholds[1] + 0.35f* err_thresholds[0]) || sensor_distance < (0.35f*err_thresholds[1] + 0.65f* err_thresholds[0]))){
+					paramval = 0.01;
+				}
+				param_set(param_find("ATT_W_EXT_HDG"), &paramval);
+
 				double yaw = atan2 ((poz_coordinates[1].y - poz_coordinates[0].y),(poz_coordinates[0].x - poz_coordinates[1].x));
 				yaw_error = yaw - actual_yaw;
+
 
 				if (print_result) {
 					PX4_INFO("Current yaw: %f deg.", (yaw * 180 / 3.14159));
@@ -394,11 +406,7 @@ namespace pozyx
 				pos.q[2] = myq(2);
 				pos.q[3] = myq(3);
 
-				float sensor_distance = sqrt(pow((poz_coordinates[1].x - poz_coordinates[0].x),2) + pow((poz_coordinates[1].y - poz_coordinates[0].y),2));
-				if ((sensor_distance > err_thresholds[1]) || (sensor_distance < err_thresholds[2])){
-					//sensor measurements are not consistent, checking expected distance
-					validcount = 0;
-				}
+
 				//average positions
 				pos.x = 0.0005 * (poz_coordinates[0].x + poz_coordinates[1].x);
 				pos.y = -0.0005 * (poz_coordinates[0].y + poz_coordinates[1].y);
@@ -1112,7 +1120,7 @@ pozyx_commands(int argc, char *argv[])
 					thread_should_exit = true;
 				}
 				if (cmd.command == MAV_CMD_POZYX_GETSTATUS) {
-					//This needs redesigned, since the thread must be running for this to happen
+					//This needs redesignedf, since the thread must be running for this to happen
 					if (thread_running) {
 						warnx("\trunning\n");
 						status.status += 1;
