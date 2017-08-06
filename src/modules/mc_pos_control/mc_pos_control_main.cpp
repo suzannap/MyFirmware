@@ -1943,8 +1943,8 @@ MulticopterPositionControl::task_main()
 					if (thrust_int(0) > 10*_params.vel_i(0)) {
 						thrust_int(0) = 10*_params.vel_i(0);
 					}
-					if (thrust_int(1) > 20*_params.vel_i(1)) {
-						thrust_int(1) = 20*_params.vel_i(1);
+					if (thrust_int(1) > 10*_params.vel_i(1)) {
+						thrust_int(1) = 10*_params.vel_i(1);
 					}
 
 					if (_control_mode.flag_control_climb_rate_enabled && !saturation_z) {
