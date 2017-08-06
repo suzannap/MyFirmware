@@ -571,18 +571,18 @@ namespace pozyx
 		uint16_t anchorlist2_2[5] = {0x212, 0x2A2, 0x233, 0x2D2, 0x252}; 	//USL
 		//uint16_t anchorlist2_3[5] = {0x212, 0x2A2, 0x233, 0x234, 0x252}; 	//old DSR
 		uint16_t anchorlist2_4[5] = {0x212, 0x2A2, 0x234, 0x2D2, 0x252}; 	//USR
-		uint16_t anchorlist2_5[5] = {0x2A2, 0x233, 0x234, 0x2D2, 0x252};	//vom3 outer
-		uint16_t anchorlist2_6[5] = {0x2A2, 0x221, 0x233, 0x2D2, 0x252};	//DSL
-		uint16_t anchorlist2_7[5] = {0x212, 0x2A2, 0x234, 0x241, 0x2D2};	//DSR
+		//uint16_t anchorlist2_5[5] = {0x2A2, 0x233, 0x234, 0x2D2, 0x252};	//vom3 outer
+		uint16_t anchorlist2_6[5] = {0x2A2, 0x233, 0x234, 0x2D2, 0x252};	//DSL
+		uint16_t anchorlist2_7[5] = {0x212, 0x2A2, 0x233, 0x234, 0x2D2};	//DSR
 
 		uint16_t anchorlist3_0[4] = {0x331, 0x332, 0x333, 0x334};			//vom3 inner
 		//uint16_t anchorlist3_1[5] = {0x312, 0x333, 0x334, 0x3D2, 0x352};	//old DSL
 		uint16_t anchorlist3_2[5] = {0x312, 0x3A2, 0x333, 0x3D2, 0x352};	//USL
 		//uint16_t anchorlist3_3[5] = {0x312, 0x3A2, 0x333, 0x334, 0x352};	//old DSR	
 		uint16_t anchorlist3_4[5] = {0x312, 0x3A2, 0x334, 0x3D2, 0x352};	//USR
-		uint16_t anchorlist3_5[5] = {0x3A2, 0x333, 0x334, 0x3D2, 0x352};	//vom3 outer
-		uint16_t anchorlist3_6[5] = {0x3A2, 0x321, 0x333, 0x3D2, 0x352};	//DSL
-		uint16_t anchorlist3_7[5] = {0x312, 0x3A2, 0x334, 0x341, 0x3D2};	//DSR
+		//uint16_t anchorlist3_5[5] = {0x3A2, 0x333, 0x334, 0x3D2, 0x352};	//vom3 outer
+		uint16_t anchorlist3_6[5] = {0x3A2, 0x333, 0x334, 0x3D2, 0x352};	//DSL
+		uint16_t anchorlist3_7[5] = {0x312, 0x3A2, 0x333, 0x334, 0x3D2};	//DSR
 
 
 		unsigned startid = 0;
@@ -591,13 +591,14 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 
-			if ((type & 0x34) == 0x10) //channel 2 in Vom 3 
+			if ((type & 0x30) == 0x10) //channel 2 in Vom 3 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_0, 4) == POZYX_SUCCESS){
 					anchor.x_pos = 2;
 					anchor.y_pos = 0;
 				}
 			}
+			/*
 			else if ((type & 0x34) == 0x14) //channel 2 out Vom 3 
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_5, 5) == POZYX_SUCCESS){
@@ -605,13 +606,15 @@ namespace pozyx
 					anchor.y_pos = 0;
 				}
 			}
-			else if ((type & 0x34) == 0x30) //channel 3 in Vom 3
+			*/
+			else if ((type & 0x30) == 0x30) //channel 3 in Vom 3
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_0, 4) == POZYX_SUCCESS){
 					anchor.x_pos = 3;
 					anchor.y_pos = 0;
 				}
 			}
+			/*
 			else if ((type & 0x34) == 0x34) //channel 3 out Vom 3
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_5, 5) == POZYX_SUCCESS){
@@ -619,12 +622,13 @@ namespace pozyx
 					anchor.y_pos = 0;
 				}
 			}
+			*/
 
 			else if ((type & 0x3C) == 0x00) // channel 2 DSL
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_6, 5) == POZYX_SUCCESS){
 					anchor.x_pos = 2;
-					anchor.y_pos = 1;
+					anchor.y_pos = 6;
 				}
 			}
 			else if ((type & 0x3C) == 0x04) //channel 2 USL
@@ -638,7 +642,7 @@ namespace pozyx
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist2_7, 5) == POZYX_SUCCESS){
 					anchor.x_pos = 2;
-					anchor.y_pos = 3;
+					anchor.y_pos = 7;
 				}
 			}
 			else if ((type & 0x3C) == 0x0C) //channel 2 USR
@@ -653,7 +657,7 @@ namespace pozyx
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_6, 5) == POZYX_SUCCESS){
 					anchor.x_pos = 3;
-					anchor.y_pos = 1;
+					anchor.y_pos = 6;
 				}
 			}
 			else if ((type & 0x3C) == 0x24) //channel 3 USL
@@ -667,7 +671,7 @@ namespace pozyx
 			{
 				if (bus.dev->setPositioningAnchorIds(anchorlist3_7, 5) == POZYX_SUCCESS){
 					anchor.x_pos = 3;
-					anchor.y_pos = 3;
+					anchor.y_pos = 7;
 				}
 			}
 			else if ((type & 0x3C) == 0x2C) //channel 3 USR
