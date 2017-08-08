@@ -356,7 +356,7 @@ PX4FMU::PX4FMU() :
 	_armed.armed = false;
 	_armed.prearmed = false;
 	_armed.ready_to_arm = false;
-	_armed.lockdown = false;
+	_armed.lockdown = true;
 	_armed.force_failsafe = false;
 	_armed.in_esc_calibration_mode = false;
 
@@ -1121,8 +1121,14 @@ PX4FMU::cycle()
 			/* overwrite outputs in case of lockdown with disarmed PWM values */
 			if (_armed.lockdown) {
 				for (size_t i = 0; i < num_outputs; i++) {
-					pwm_limited[i] = 0;// forcing to 0 for Waterbee safety - aux included. was: _disarmed_pwm[i];
+					if (i < 4){
+						pwm_limited[i] = 0;// forcing to 0 for Waterbee safety - aux included. was: _disarmed_pwm[i];
+					}
+					else {
+						pwm_limited[i] = 900; //this should put the aux so 900, maybe safer than 0
+					}
 				}
+
 			}
 
 			/* output to the servos */
