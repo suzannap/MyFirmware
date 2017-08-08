@@ -558,9 +558,11 @@ namespace pozyx
 			startid = bus.index + 1;
 			if (bus.dev->addDevice(poz_anchor) == POZYX_SUCCESS){
 				
+				/* don't want to exceed 10k cycles. Moving to SetUWB function
 				if (bus.dev->saveConfiguration(POZYX_FLASH_NETWORK) == POZYX_SUCCESS) {
 					PX4_INFO("Anchor 0x%x added to tag %d", network_id, bus.index);
 				}
+				*/
 				
 				usleep(500);
 				uint8_t device_list_size;
@@ -854,6 +856,9 @@ namespace pozyx
 					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 3);
 
 				}
+
+				//also save anchors on UWB settings change
+				bus.dev->saveConfiguration(POZYX_FLASH_NETWORK);
 			}
 		}
 		else {
