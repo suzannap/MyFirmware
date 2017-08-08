@@ -50,11 +50,37 @@ static int daemon_task;				/**< Handle of daemon task / thread */
 static int count = 0;
 static int tag_height = 400;
 static int err_thresholds[3] = {300,1800,200};
-static device_coordinates_t stored_anchors[24];
-static int stored_anchors_count = 0;
+//static int stored_anchors_count = 20;
 static double actual_yaw = 0.0f;
 static double yaw_error = 3.0f;
 static int pozyx_err_count = 0;
+/*static device_coordinates_t stored_anchors[24]={
+	{0x212, 1, {0,0,0}},
+	{0x2A2, 1, {0,0,0}},
+	{0x221, 1, {0,0,0}},
+	{0x231, 1, {0,0,0}},
+	{0x232, 1, {0,0,0}},
+	{0x233, 1, {0,0,0}},
+	{0x234, 1, {0,0,0}},
+	{0x241, 1, {0,0,0}},
+	{0x2D2, 1, {0,0,0}},
+	{0x251, 1, {0,0,0}},
+	{0x312, 1, {0,0,0}},
+	{0x3A2, 1, {0,0,0}},
+	{0x321, 1, {0,0,0}},
+	{0x331, 1, {0,0,0}},
+	{0x332, 1, {0,0,0}},
+	{0x333, 1, {0,0,0}},
+	{0x334, 1, {0,0,0}},
+	{0x341, 1, {0,0,0}},
+	{0x3D2, 1, {0,0,0}},
+	{0x351, 1, {0,0,0}},
+	{0x000, 1, {0,0,0}},
+	{0x000, 1, {0,0,0}},
+	{0x000, 1, {0,0,0}},
+	{0x000, 1, {0,0,0}}};
+	*/
+
 /* Publish Position Topic */
 struct pozyx_position_s position;
 //memset(&position, 0, sizeof(position));
@@ -554,8 +580,8 @@ namespace pozyx
 				usleep(300000);	
 			}
 		}
-		stored_anchors_count = anchor.anchor_ct;
-		stored_anchors[stored_anchors_count-1] = poz_anchor;
+		//stored_anchors_count = anchor.anchor_ct;
+		//stored_anchors[stored_anchors_count-1] = poz_anchor;
 
 	}
 
@@ -740,8 +766,8 @@ namespace pozyx
 			orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);	
 		}
 		for (int i=0; i<24; i++) {
-			stored_anchors[i] = {0, 1, {0, 0, 0}};
-			stored_anchors_count = 0;
+			//stored_anchors[i] = {0, 1, {0, 0, 0}};
+			//stored_anchors_count = 0;
 		}
 	}
 
@@ -780,22 +806,24 @@ namespace pozyx
 				PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
 				anchor.id = bus.index;
 				anchor.anchor_ct = device_list_size;
-				
+				uint16_t anchors_temp[device_list_size];
+
 				if (device_list_size > 0) {
-					for (int j=0; j<stored_anchors_count; j++){
-						anchor.anchor_id = stored_anchors[j].network_id;
-						uint8_t version = 0;
-						if (bus.dev->getFirmwareVersion(&version, stored_anchors[j].network_id) == POZYX_SUCCESS) {
-							anchor.found = 1;								
+					if (bus.dev->getDeviceIds(anchors_temp, device_list_size) == POZYX_SUCCESS){				
+						for (int j=0; j<device_list_size; j++){
+							anchor.anchor_id = anchors_temp[j];
+							uint8_t version = 0;
+							if (bus.dev->getFirmwareVersion(&version, anchors_temp[j]) == POZYX_SUCCESS) {
+								anchor.found = 1;								
+							}
+							else {
+								anchor.found = 0;
+							}
+							anchor.timestamp = hrt_absolute_time();
+							orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);		
+							usleep(1000000);					
 						}
-						else {
-							anchor.found = 0;
-						}
-						anchor.timestamp = hrt_absolute_time();
-						orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);		
-						usleep(1000000);					
 					}
-					
 				}	
 			}
 		}
