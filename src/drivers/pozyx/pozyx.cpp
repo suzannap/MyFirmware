@@ -800,7 +800,7 @@ namespace pozyx
 
 
 				if (device_list_size > 0) {			
-					for (int j=0; j<device_list_size; j++){
+					for (int j=0; j<10; j++){
 						anchor.anchor_id = temp_anchors[j];
 						uint8_t version = 0;
 						if (bus.dev->getFirmwareVersion(&version, temp_anchors[j]) == POZYX_SUCCESS) {
