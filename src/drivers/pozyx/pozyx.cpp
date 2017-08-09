@@ -54,32 +54,8 @@ static int err_thresholds[3] = {300,1800,200};
 static double actual_yaw = 0.0f;
 static double yaw_error = 3.0f;
 static int pozyx_err_count = 0;
-/*static device_coordinates_t stored_anchors[24]={
-	{0x212, 1, {0,0,0}},
-	{0x2A2, 1, {0,0,0}},
-	{0x221, 1, {0,0,0}},
-	{0x231, 1, {0,0,0}},
-	{0x232, 1, {0,0,0}},
-	{0x233, 1, {0,0,0}},
-	{0x234, 1, {0,0,0}},
-	{0x241, 1, {0,0,0}},
-	{0x2D2, 1, {0,0,0}},
-	{0x251, 1, {0,0,0}},
-	{0x312, 1, {0,0,0}},
-	{0x3A2, 1, {0,0,0}},
-	{0x321, 1, {0,0,0}},
-	{0x331, 1, {0,0,0}},
-	{0x332, 1, {0,0,0}},
-	{0x333, 1, {0,0,0}},
-	{0x334, 1, {0,0,0}},
-	{0x341, 1, {0,0,0}},
-	{0x3D2, 1, {0,0,0}},
-	{0x351, 1, {0,0,0}},
-	{0x000, 1, {0,0,0}},
-	{0x000, 1, {0,0,0}},
-	{0x000, 1, {0,0,0}},
-	{0x000, 1, {0,0,0}}};
-	*/
+static uint16_t stored_anchors_2[10]={0x212, 0x2A2, 0x221, 0x231, 0x232, 0x233, 0x234, 0x241, 0x2D2, 0x252};
+static uint16_t stored_anchors_3[10]={0x312, 0x3A2, 0x321, 0x331, 0x332, 0x333, 0x334, 0x341, 0x3D2, 0x352};
 
 /* Publish Position Topic */
 struct pozyx_position_s position;
@@ -803,29 +779,40 @@ namespace pozyx
 			struct pozyx_bus_option &bus = find_bus(busid, startid);
 			startid = bus.index + 1;
 			uint8_t device_list_size;
+			uint8_t channel = 0;
+			uint16_t temp_anchors[10];
+			bus.dev->regRead(POZYX_UWB_CHANNEL, &channel, 1);
+			if (channel == 2) {
+				for (int j=0; j<10; j++){
+					temp_anchors[j] = stored_anchors_2[j];
+				}
+			}
+			else if (channel == 3){
+				for (int j=0; j<10; j++){
+					temp_anchors[j] = stored_anchors_3[j];
+				}
+			}
 
 			if (bus.dev->getDeviceListSize(&device_list_size) == POZYX_SUCCESS){
 				PX4_INFO("Found %d anchors configured on tag %d", device_list_size, bus.index);
 				anchor.id = bus.index;
 				anchor.anchor_ct = device_list_size;
-				uint16_t anchors_temp[device_list_size];
 
-				if (device_list_size > 0) {
-					if (bus.dev->getDeviceIds(anchors_temp, device_list_size) == POZYX_SUCCESS){				
-						for (int j=0; j<device_list_size; j++){
-							anchor.anchor_id = anchors_temp[j];
-							uint8_t version = 0;
-							if (bus.dev->getFirmwareVersion(&version, anchors_temp[j]) == POZYX_SUCCESS) {
-								anchor.found = 1;								
-							}
-							else {
-								anchor.found = 0;
-							}
-							anchor.timestamp = hrt_absolute_time();
-							orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);		
-							usleep(1000000);					
+
+				if (device_list_size > 0) {			
+					for (int j=0; j<device_list_size; j++){
+						anchor.anchor_id = temp_anchors[j];
+						uint8_t version = 0;
+						if (bus.dev->getFirmwareVersion(&version, temp_anchors[j]) == POZYX_SUCCESS) {
+							anchor.found = 1;								
 						}
-					}
+						else {
+							anchor.found = 0;
+						}
+						anchor.timestamp = hrt_absolute_time();
+						orb_publish(ORB_ID(pozyx_anchor),anchor_pub_fd, &anchor);		
+						usleep(1000000);					
+					}					
 				}	
 			}
 		}
@@ -836,7 +823,7 @@ namespace pozyx
 	setuwb(enum POZYX_BUS busid, int count, uint8_t channel, uint8_t bitrate, uint8_t prf, uint8_t plen, float gain_db, uint16_t target)
 	{
 		unsigned startid = 0;
-		uint8_t regs[3] = {POZYX_UWB_CHANNEL, POZYX_UWB_RATES, POZYX_UWB_PLEN};
+		uint8_t regs[4] = {POZYX_UWB_CHANNEL, POZYX_UWB_RATES, POZYX_UWB_PLEN, POZYX_UWB_GAIN};
 
 		//uint8_t plens[8] = {0x0C, 0x28, 0x18, 0x08, 0x34, 0x24, 0x14, 0x04};
 		UWB_settings_t mysettings;
@@ -853,7 +840,7 @@ namespace pozyx
 
 				if (bus.dev->setUWBSettings(&mysettings) == POZYX_SUCCESS){
 					PX4_INFO("UWB settings updated on tag %d", bus.index);
-					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 3);
+					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 4);
 
 				}
 
@@ -866,7 +853,7 @@ namespace pozyx
 
 			if (bus.dev->setUWBSettings(&mysettings, target) == POZYX_SUCCESS){
 				PX4_INFO("UWB settings updated on device %x", target);
-					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 3, target);
+					bus.dev->saveConfiguration(POZYX_FLASH_REGS, regs, 4, target);
 			}
 			else {
 				PX4_INFO("Device %x not found", target);
